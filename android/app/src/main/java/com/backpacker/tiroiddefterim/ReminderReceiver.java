@@ -30,7 +30,30 @@ public class ReminderReceiver extends BroadcastReceiver {
             return;
         }
         if (Reminder.ACTION_REMIND.equals(a) && nm != null) show(c, nm);
+        if (Reminder.ACTION_WEIGHT.equals(a) && nm != null) showWeight(c, nm);
         Reminder.schedule(c);
+    }
+
+    private void showWeight(Context c, NotificationManager nm) {
+        if (Build.VERSION.SDK_INT >= 26) {
+            NotificationChannel ch = new NotificationChannel("kilo", "Kilo ölçümü", NotificationManager.IMPORTANCE_HIGH);
+            ch.setDescription("Her gün tartılma hatırlatması");
+            nm.createNotificationChannel(ch);
+        }
+        Intent open = new Intent(c, MainActivity.class).putExtra("open", "weight")
+                .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        PendingIntent openPi = PendingIntent.getActivity(c, 5, open, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        Notification.Builder b = Build.VERSION.SDK_INT >= 26 ? new Notification.Builder(c, "kilo") : new Notification.Builder(c);
+        b.setSmallIcon(R.drawable.ic_notify)
+                .setContentTitle("Kilo ölçümü")
+                .setContentText("Tartıl ve bugünkü kilonu yaz.")
+                .setStyle(new Notification.BigTextStyle().bigText("Tuvaletten sonra, kahvaltıdan önce tartıl ve bugünkü kilonu yaz."))
+                .setContentIntent(openPi)
+                .setAutoCancel(true)
+                .setCategory(Notification.CATEGORY_REMINDER)
+                .addAction(R.drawable.ic_notify, "Kiloyu yaz", openPi);
+        if (Build.VERSION.SDK_INT < 26) b.setPriority(Notification.PRIORITY_HIGH).setDefaults(Notification.DEFAULT_ALL);
+        try { nm.notify(850, b.build()); } catch (SecurityException ignored) { }
     }
 
     private void show(Context c, NotificationManager nm) {

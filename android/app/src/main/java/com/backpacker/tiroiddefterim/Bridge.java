@@ -22,6 +22,22 @@ public class Bridge {
         Reminder.schedule(ctx);
     }
 
+    @JavascriptInterface
+    public void setWeightReminder(String hhmm, boolean on) {
+        if (hhmm == null || !hhmm.matches("\\d{1,2}:\\d{2}")) return;
+        prefs(ctx).edit().putString("wtime", hhmm).putBoolean("won", on).apply();
+        Reminder.schedule(ctx);
+    }
+
+    /** Uygulama bir bildirimden açıldıysa hedef ekranı döner ("weight"), yoksa boş. */
+    @JavascriptInterface
+    public String openTarget() {
+        SharedPreferences p = prefs(ctx);
+        String v = p.getString("open", "");
+        if (!v.isEmpty()) p.edit().remove("open").apply();
+        return v;
+    }
+
     /** Bildirimdeki "Aldım" düğmesine basıldıysa "YYYY-MM-DD|HH:MM" döner, yoksa boş. */
     @JavascriptInterface
     public String takenFromNotification() {

@@ -73,6 +73,7 @@ public class MainActivity extends Activity {
                 return true;
             }
         });
+        readOpen(getIntent());
         web.loadUrl(START);
 
         if (Build.VERSION.SDK_INT >= 33
@@ -121,6 +122,20 @@ public class MainActivity extends Activity {
                 return;
             } catch (Exception ignored) { }
         }
+    }
+
+    private void readOpen(Intent i) {
+        if (i == null) return;
+        String o = i.getStringExtra("open");
+        if (o != null && !o.isEmpty()) Bridge.prefs(this).edit().putString("open", o).apply();
+        i.removeExtra("open");
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        readOpen(intent);
     }
 
     @Override
