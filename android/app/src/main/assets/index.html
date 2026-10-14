@@ -1244,7 +1244,7 @@ function lineChart(cols,goal){
   let g="";for(let v=lo;v<=hi+1e-9;v+=step)g+=`<line x1="${L}" x2="${W-Rr}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}" stroke="var(--line)"/><text x="${L-5}" y="${(y(v)+3.5).toFixed(1)}" text-anchor="end" font-size="10" fill="var(--muted)">${v}</text>`;
   const pts=cols.map((c,i)=>c.v!=null?[x(i),y(c.v),c]:null).filter(Boolean);
   const path=pts.map((p,j)=>(j?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1)).join("");
-  const gl=goal?`<line x1="${L}" x2="${W-Rr}" y1="${y(goal).toFixed(1)}" y2="${y(goal).toFixed(1)}" stroke="var(--good)" stroke-width="1.5" stroke-dasharray="5 4"/><text x="${W-Rr}" y="${(y(goal)-4).toFixed(1)}" text-anchor="end" font-size="10" fill="var(--good)">hedef ${fmtKg(goal)}</text>`:"";
+  const gl=goal?`<line x1="${L}" x2="${W-Rr}" y1="${y(goal).toFixed(1)}" y2="${y(goal).toFixed(1)}" stroke="var(--good)" stroke-width="1.5" stroke-dasharray="5 4"/><text x="${L+4}" y="${(y(goal)-4).toFixed(1)}" text-anchor="start" font-size="10" font-weight="700" fill="var(--good)">hedef ${fmtKg(goal)}</text>`:"";
   const area=pts.length>1?`<path d="${path}L${pts[pts.length-1][0].toFixed(1)} ${T+ih}L${pts[0][0].toFixed(1)} ${T+ih}Z" fill="var(--accent)" opacity=".10"/>`:"";
   const labels=cols.map((c,i)=>c.label?`<text x="${x(i).toFixed(1)}" y="${H-7}" text-anchor="middle" font-size="10" fill="var(--muted)">${c.label}</text>`:"").join("");
   const dots=pts.map((p,j)=>`<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="${j===pts.length-1?4.5:3}" fill="${j===pts.length-1?"var(--accent)":"var(--surface)"}" stroke="var(--accent)" stroke-width="2"><title>${p[2].title||""}</title></circle>`).join("");
