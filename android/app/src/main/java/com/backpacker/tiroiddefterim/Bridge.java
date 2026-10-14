@@ -71,7 +71,17 @@ public class Bridge {
     @JavascriptInterface
     public void setReminder(String hhmm, String name) {
         if (hhmm == null || !hhmm.matches("\\d{1,2}:\\d{2}")) return;
-        prefs(ctx).edit().putString("time", hhmm).putString("name", name == null ? "İlacım" : name).apply();
+        prefs(ctx).edit().putString("time", hhmm).putString("name", name == null ? "İlacım" : name).putBoolean("mon", true).apply();
+        Reminder.schedule(ctx);
+    }
+
+    /** İlaç hatırlatıcısını kurar ya da (on=false, "İlaç kullanmıyorum") tamamen kapatır. */
+    @JavascriptInterface
+    public void setMedReminder(String hhmm, String name, boolean on) {
+        SharedPreferences.Editor e = prefs(ctx).edit().putBoolean("mon", on);
+        if (hhmm != null && hhmm.matches("\\d{1,2}:\\d{2}")) e.putString("time", hhmm);
+        if (name != null && !name.isEmpty()) e.putString("name", name);
+        e.apply();
         Reminder.schedule(ctx);
     }
 

@@ -93,6 +93,7 @@ public class ReminderReceiver extends BroadcastReceiver {
     }
 
     private void show(Context c, NotificationManager nm) {
+        if (!Bridge.prefs(c).getBoolean("mon", true)) return;
         String name = Bridge.prefs(c).getString("name", "İlacım");
         if (Build.VERSION.SDK_INT >= 26) {
             NotificationChannel ch = new NotificationChannel(CHANNEL, "İlaç hatırlatıcı", NotificationManager.IMPORTANCE_HIGH);

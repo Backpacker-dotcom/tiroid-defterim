@@ -36,7 +36,8 @@ public class Reminder {
         SharedPreferences p = Bridge.prefs(c);
         AlarmManager am = (AlarmManager) c.getSystemService(Context.ALARM_SERVICE);
         if (am == null) return;
-        scheduleAt(c, am, pending(c, ACTION_REMIND, 1), p.getString("time", "08:45"));
+        if (p.getBoolean("mon", true)) scheduleAt(c, am, pending(c, ACTION_REMIND, 1), p.getString("time", "08:45"));
+        else am.cancel(pending(c, ACTION_REMIND, 1));
         if (p.getBoolean("won", true)) scheduleAt(c, am, pending(c, ACTION_WEIGHT, 4), p.getString("wtime", "08:50"));
         else am.cancel(pending(c, ACTION_WEIGHT, 4));
         // Takviyeler

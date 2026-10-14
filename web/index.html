@@ -916,6 +916,7 @@ function lagOf(f){const w=f.why||"";return /4 saat/.test(w)?240:/30-60 dk/.test(
 const toMin=t=>{const[h,m]=t.split(":").map(Number);return h*60+m};
 const toHM=m=>{m=((m%1440)+1440)%1440;return pad(Math.floor(m/60))+":"+pad(m%60)};
 const nowMin=()=>{const n=new Date();return n.getHours()*60+n.getMinutes()};
+const noMed=()=>!!S.settings.noMed;
 function medBase(k){const d=S.days[k];return d&&d.med?toMin(d.med.at):toMin(S.settings.medTime)}
 // Su: gün kaydında water (ml) ve o günün hedefi wg tutulur; hedef sonradan değişse de geçmiş günler kendi hedefiyle değerlendirilir
 const waterGoalOn=k=>{const D=S.days[k];return (D&&D.wg)||+S.settings.waterGoal||2000};
@@ -978,7 +979,7 @@ function dayNav(k){const t=todayKey(),d=parseKey(k);
   <div class="mid"><b>${dayWord(k)}</b><small>${d.toLocaleDateString("tr-TR",{day:"numeric",month:"long",year:"numeric",weekday:"long"})}</small><input type="date" id="dPick" value="${k}" max="${t}" aria-label="Gün seç"></div>
   <button class="nb" id="dNext" aria-label="Sonraki gün" ${k>=t?"disabled":""}>›</button></div>
   ${k<t?`<div class="pastnote"><span>Geçmiş bir günü görüyorsun. Eklediklerin bu güne kaydedilir.</span><button class="btn sm" id="dToday">Bugüne dön</button></div>`:""}`}
-function medCard(k){const d=day(k),med=d.med,st=S.settings,today=isToday(k);
+function medCard(k){if(noMed())return "";const d=day(k),med=d.med,st=S.settings,today=isToday(k);
   const late=today&&!med&&nowMin()>toMin(st.medTime)+60;const dose=doseOn(k);
   const ico=`<div class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="8" width="18" height="8" rx="4" transform="rotate(-35 12 12)"/><path d="m9.5 8.5 5 7"/></svg></div>`;
   const title=`<b>${esc(dose?doseMed(dose):st.medName)}${dose?` · ${fmtDose(dose)}`:""}</b>`;
@@ -1101,10 +1102,14 @@ function vSettings(){
   <label style="display:flex;gap:10px;align-items:flex-start"><input id="sCarry" type="checkbox" ${st.carry?"checked":""} style="width:20px;height:20px;margin-top:2px"><span>Aştığım kaloriyi ertesi günün hedefinden düş<br><span class="small muted">En fazla hedefin %${st.carryMax}'i kadar düşülür, aşırı kısıtlama olmasın diye.</span></span></label>
   </section>
   <section class="card" style="display:flex;flex-direction:column;gap:12px"><h2>İlaç hatırlatıcı</h2>
+  <label style="display:flex;gap:10px;align-items:center"><input id="sNoMed" type="checkbox" ${st.noMed?"checked":""} style="width:20px;height:20px"><span>İlaç kullanmıyorum</span></label>
+  <div id="sMedBox" style="display:${st.noMed?"none":"flex"};flex-direction:column;gap:12px">
   <div class="row"><div class="field"><label for="sMed">İlaç adı</label><input id="sMed" value="${esc(st.medName)}"></div>
   <div class="field"><label for="sMedT">Saat</label><input id="sMedT" type="time" value="${st.medTime}"></div></div>
   ${window.Android?`<div class="notice">Uygulama her gün bu saatte bildirim gönderir. Bildirimdeki “Aldım” düğmesine basarsan burada da işaretlenir.</div>`:`<div class="notice">Bu sayfa kapalıyken ses çıkaramaz. Gerçek alarm telefonunun Saat uygulamasında kurulu olmalı. Burada aldığını işaretlersen hangi günler aldığın geçmişte görünür.</div>`}
   <div class="small muted">Levotiroksin genelde sabah aç karnına, sadece suyla alınır; kahvaltı ve kahveden 30-60 dk önce, süt, kalsiyum, demir ve soyadan 4 saat önce.</div>
+  </div>
+  ${st.noMed?`<div class="small muted">İlaç hatırlatıcısı kapalı. Bugün ekranında ilaç kartı ve raporlarda ilaç bölümleri gösterilmez.</div>${window.Android&&!Android.setMedReminder?`<div class="notice warn">İlaç bildiriminin tamamen durması için uygulamanın yeni sürümünü kurman gerekiyor: github.com/Backpacker-dotcom/tiroid-defterim/releases/latest/download/FlutterThyro.apk</div>`:""}`:""}
   </section>
   <section class="card" style="display:flex;flex-direction:column;gap:12px"><h2>Kilo takibi</h2>
   <label style="display:flex;gap:10px;align-items:center"><input id="sWOn" type="checkbox" ${st.weightOn?"checked":""} style="width:20px;height:20px"><span>Her gün kilo ölçümü hatırlat</span></label>
@@ -1237,9 +1242,10 @@ function showOnboarding(){
   </section>
   <section class="card" style="display:flex;flex-direction:column;gap:12px">
     <div class="sh"><span class="stepno">2</span><h2>İlacın</h2></div>
-    <div class="row"><div class="field"><label for="oM">İlacın adı</label><input id="oM" value="${esc(st.medName)}" placeholder="Levotiron, Euthyrox, Tefor…"></div>
+    <label style="display:flex;gap:10px;align-items:center"><input id="oNoMed" type="checkbox" ${st.noMed?"checked":""} style="width:20px;height:20px"> İlaç kullanmıyorum</label>
+    <div id="oMedBox" style="display:${st.noMed?"none":"flex"};flex-direction:column;gap:12px"><div class="row"><div class="field"><label for="oM">İlacın adı</label><input id="oM" value="${esc(st.medName)}" placeholder="Levotiron, Euthyrox, Tefor…"></div>
     <div class="field"><label for="oT">Her sabah saat</label><input id="oT" type="time" value="${st.medTime}"></div></div>
-    <div class="small muted">${window.Android?"Her gün bu saatte bildirim gelir.":"Bu saati takvimde ve raporlarda kullanırız."}</div>
+    <div class="small muted">${window.Android?"Her gün bu saatte bildirim gelir.":"Bu saati takvimde ve raporlarda kullanırız."}</div></div>
   </section>
   <section class="card" style="display:flex;flex-direction:column;gap:8px">
     <div class="sh"><span class="stepno">3</span><h2>Bilmen gereken</h2></div>
@@ -1249,6 +1255,7 @@ function showOnboarding(){
   <button class="btn primary" id="oGo" style="padding:14px;font-size:16px">Başla</button>
   </div>`;
   document.body.appendChild(o);
+  o.addEventListener("change",e=>{if(e.target.id==="oNoMed")$("#oMedBox").style.display=e.target.checked?"none":"flex"});
   o.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
     if(b.id==="oCalcT"){const c=$("#oCalc");c.hidden=!c.hidden;b.setAttribute("aria-expanded",!c.hidden)}
     if(b.dataset.sex){sex=b.dataset.sex;o.querySelectorAll("[data-sex]").forEach(x=>x.setAttribute("aria-pressed",x===b))}
@@ -1259,7 +1266,7 @@ function showOnboarding(){
       $("#oK").value=k;$("#oRes").style.color="var(--muted)";$("#oRes").textContent=`Tahmini ihtiyacın: ${k} kcal. Kutuya yazdım, istersen değiştirebilirsin.`}
     if(b.id==="oGo"){const k=+$("#oK").value;
       if(!(k>=800&&k<=5000)){$("#oErr").textContent="Kalori 800 ile 5000 arasında olmalı. Bilmiyorsan “Bilmiyorum, hesapla”ya dokun.";return}
-      st.kcal=k;st.medName=$("#oM").value.trim()||"İlacım";st.medTime=$("#oT").value||"08:45";st.welcomed=true;
+      st.kcal=k;st.noMed=$("#oNoMed").checked;st.medName=$("#oM").value.trim()||"İlacım";st.medTime=$("#oT").value||"08:45";st.welcomed=true;
       const d=day(todayKey());if(!d.entries.length)d.target=targetFor(todayKey()).kcal;
       saveSettings();pushReminder();o.remove();tab="today";render();toast("Hazırsın, afiyet olsun")}
   });
@@ -1323,7 +1330,7 @@ function symCard(k){const d=day(k),sy=d.sym||{},has=SYMS.some(([id])=>sy[id]!=nu
     ${SYMS.map(([id,n])=>`<div class="symrow"><span>${n}</span><div class="lv" role="group" aria-label="${n}">${[0,1,2,3,4].map(v=>`<button data-sym="${id}" data-lv="${v}" aria-pressed="${sy[id]===v}" title="${LV[v]}">${v}</button>`).join("")}</div></div>`).join("")}
     <div class="field"><label for="symNote">Not (isteğe bağlı)</label><input id="symNote" value="${esc(sy.note||"")}" placeholder="Örn. regl dönemi, soğuk algınlığı"></div>
     <button class="btn primary" id="symDone">Tamam</button></section>`}
-function suppTimeWarn(s){const lag=+s.lag||30,med=toMin(S.settings.medTime);if(toMin(s.time)<med+lag&&toMin(s.time)>=med-60)return `İlaçtan en az ${lag>=240?"4 saat":lag+" dk"} sonra alınmalı (en erken ${toHM(med+lag)})`;return ""}
+function suppTimeWarn(s){if(noMed())return "";const lag=+s.lag||30,med=toMin(S.settings.medTime);if(toMin(s.time)<med+lag&&toMin(s.time)>=med-60)return `İlaçtan en az ${lag>=240?"4 saat":lag+" dk"} sonra alınmalı (en erken ${toHM(med+lag)})`;return ""}
 function suppCard(k){const L=suppsL();if(!L.length)return "";const d=day(k),sp=d.sup||{};const medAt=d.med?toMin(d.med.at):null;
   return `<section class="card"><div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px"><h2>Takviyeler</h2><span class="small muted">${L.filter(s=>sp[s.id]).length}/${L.length} alındı</span></div>
    ${L.map(s=>{const at=sp[s.id];let w="";if(at&&medAt!=null&&toMin(at)>=medAt&&toMin(at)<medAt+(+s.lag||30))w=`İlaca çok yakın alındı (${toHM(medAt+(+s.lag||30))}'ten sonra olmalıydı)`;else if(!at)w=suppTimeWarn(s);
@@ -1331,7 +1338,8 @@ function suppCard(k){const L=suppsL();if(!L.length)return "";const d=day(k),sp=d
      ${at?`<button class="btn sm ghost" data-sundo="${s.id}">Geri al</button>`:`<button class="btn sm primary" data-stake="${s.id}">Aldım</button>`}</div>`}).join("")}</section>`}
 /* Sağlık sekmesi */
 function vHealth(){
-  const seg=`<div class="seg" role="group" aria-label="Sağlık bölümü">${[["labs","Tahliller"],["sym","Belirtiler"],["supp","Takviyeler"],["dose","İlaç dozu"]].map(([k,l])=>`<button data-hseg="${k}" aria-pressed="${hSeg===k}">${l}</button>`).join("")}</div>`;
+  const seg=`<div class="seg" role="group" aria-label="Sağlık bölümü">${[["labs","Tahliller"],["sym","Belirtiler"],["supp","Takviyeler"],...(noMed()?[]:[["dose","İlaç dozu"]])].map(([k,l])=>`<button data-hseg="${k}" aria-pressed="${hSeg===k}">${l}</button>`).join("")}</div>`;
+  if(hSeg==="dose"&&noMed())hSeg="labs";
   return seg+(hSeg==="labs"?vLabs():hSeg==="sym"?vSymHist():hSeg==="supp"?vSupps():vDoses())}
 function labChart(L,code){if(L.length<2)return "";
   const W=320,H=150,Lp=34,Rr=10,T=14,B=22,iw=W-Lp-Rr,ih=H-T-B;const t0=parseKey(L[0].date).getTime(),t1=parseKey(L[L.length-1].date).getTime(),span=Math.max(1,t1-t0);
@@ -1419,7 +1427,7 @@ function openSuppEdit(id){const s=id?suppsL().find(x=>x.id===id):null;
   sc.addEventListener("input",chk);sc.addEventListener("change",chk);
   sc.addEventListener("click",e=>{const b=e.target.closest("button");if(e.target===sc||(b&&b.id==="spCancel")){sc.remove();return}if(!b)return;
     if(b.dataset.pre){const [n,lag,nt]=SUPP_PRESETS[+b.dataset.pre];$("#spN").value=n;$("#spL").value=String(lag);note=nt;$("#spInfo").textContent=nt;
-      const med=toMin(S.settings.medTime);if(toMin($("#spT").value)<med+lag)$("#spT").value=toHM(Math.ceil((med+lag)/15)*15);chk()}
+      const med=toMin(S.settings.medTime);if(!noMed()&&toMin($("#spT").value)<med+lag)$("#spT").value=toHM(Math.ceil((med+lag)/15)*15);chk()}
     if(b.id==="spDel"){if(b.dataset.ok!=="1"){b.dataset.ok="1";b.textContent="Emin misin?";return}S.settings.supps=suppsL().filter(x=>x.id!==id);saveSettings();pushReminder();sc.remove();render()}
     if(b.id==="spOk"){const n=$("#spN").value.trim();if(!n){$("#spN").focus();return}
       const o={id:s?s.id:uid(),name:n,time:$("#spT").value||"13:00",lag:+$("#spL").value,on:$("#spOn").checked,note};
@@ -1491,7 +1499,7 @@ function firstKey(){const ks=Object.keys(S.days).filter(k=>{const d=S.days[k];re
 function dayInfo(k,fk){const D=S.days[k],tk=todayKey();
   const has=!!(D&&D.entries&&D.entries.length),t=has?totals(D):{k:0,p:0,f:0,c:0},tar=(D&&D.target)||targetFor(k).kcal;
   const bal=has?(t.k>tar*1.05?"over":t.k<tar*.8?"under":"ok"):null;
-  let med;if(k>tk)med="future";else if(D&&D.med)med="taken";else if(k<fk)med="none";else if(k===tk)med=nowMin()<toMin(S.settings.medTime)+60?"pending":"missed";else med="missed";
+  let med;if(k>tk)med="future";else if(D&&D.med)med="taken";else if(k<fk)med="none";else if(noMed())med="off";else if(k===tk)med=nowMin()<toMin(S.settings.medTime)+60?"pending":"missed";else med="missed";
   const q={ok:0,care:0,no:0};(has?D.entries:[]).forEach(e=>q[stOf(e)]+=e.k);
   return{k,has,t,tar,bal,med,q,entries:has?D.entries:[],medAt:D&&D.med?D.med.at:null,w:D&&D.w?D.w:null,water:D&&D.water?D.water:0,wg:waterGoalOn(k)}}
 function agg(keys){const fk=firstKey(),I=keys.map(k=>dayInfo(k,fk)),L=I.filter(i=>i.has);
@@ -1530,7 +1538,7 @@ function summaryText(A,keys){
   t+=A.harmCount?`Uzak durman gereken yiyecekleri <b>${A.harmCount} kez</b> tükettin (${A.harm.slice(0,3).map(f=>esc(f.n)).join(", ")}); kalorindeki payları <b>%${A.pct("no")}</b>. `:A.n?"Uzak durman gereken hiçbir şey yemedin, harika. ":"";
   if(A.wN)t+=A.wN===1&&A.wBase===A.w0?`Kilon <b>${fmtKg(A.w1)} kg</b> olarak ölçüldü. `:`Kilon <b>${fmtKg(A.wBase)} kg</b>'dan <b>${fmtKg(A.w1)} kg</b>'a ${A.wDelta<-0.05?"indi":A.wDelta>0.05?"çıktı":"geldi, değişmedi"}${Math.abs(A.wDelta)>=0.05?` (<b style="color:${A.wDelta<0?"var(--good)":"var(--bad)"}">${fmtDiff(A.wDelta)} kg</b>)`:""}. `;
   const md=A.taken.length+A.missed.length;
-  if(md)t+=A.missed.length?`İlacını <b>${A.taken.length}</b> gün aldın, <b>${A.missed.length}</b> gün atladın. `:`İlacını kaydettiğin <b>${A.taken.length}</b> günün hepsinde aldın. `;
+  if(md&&!noMed())t+=A.missed.length?`İlacını <b>${A.taken.length}</b> gün aldın, <b>${A.missed.length}</b> gün atladın. `:`İlacını kaydettiğin <b>${A.taken.length}</b> günün hepsinde aldın. `;
   if(A.waN)t+=`Su kaydettiğin <b>${A.waN}</b> günün <b>${A.waHit}</b>'inde su hedefine ulaştın, günlük ortalama <b>${fmtL(A.waAvg)} L</b>. `;
   const Sy=symStats(keys);if(Sy._days)t+=`Belirtilerini <b>${Sy._days}</b> gün işaretledin, ortalama şiddet <b>${numTR(Sy._avg,1)}/4</b>.`;
   return t}
@@ -1615,7 +1623,7 @@ function vReport(){
     qc=stackChart(A.I.map(i=>({label:lab(i),q:i.q})));
     wa=barChart(A.I.map(i=>({label:lab(i),v:i.water,tar:i.water?i.wg:0,cls:!i.water?"none":i.water>=i.wg?"ok":"under",title:`${fmtShort(i.k)}: ${numTR(i.water,0)} ml`})),{aria:"Günlük içilen su"});
     wc=A.I.map(i=>({label:lab(i),v:i.w,title:`${fmtShort(i.k)}: ${fmtKg(i.w)} kg`}));
-    const sym={taken:"✓",missed:"✕",pending:"…",none:"",future:""};
+    const sym={taken:"✓",missed:"✕",pending:"…",none:"",future:"",off:""};
     meds=`<div class="medstrip" style="grid-template-columns:repeat(7,1fr)">${rp==="month"?[...Array((parseKey(keys[0]).getDay()+6)%7)].map(()=>"<span></span>").join(""):""}${A.I.map(i=>`<button class="m" data-day="${i.k}" style="border:0;background:none;padding:0" aria-label="${fmtD(i.k)}"><i class="${i.med}">${sym[i.med]}</i>${rp==="week"?DOW[parseKey(i.k).getDay()]:parseKey(i.k).getDate()}</button>`).join("")}</div>`;
   }
   const missedList=A.missed.length?`<div class="notice" style="background:var(--bad-soft);margin-top:10px"><b style="color:var(--bad)">Atlanan günler (${A.missed.length})</b><br>${A.missed.slice(0,rp==="year"?20:31).map(i=>fmtD(i.k)).join("<br>")}${A.missed.length>20&&rp==="year"?"<br>…":""}</div>`:(A.taken.length?`<div class="notice" style="background:var(--good-soft);margin-top:10px">Bu dönemde hiç atlamadın.</div>`:"");
@@ -1629,7 +1637,7 @@ function vReport(){
     <div class="tile bad"><b>${A.over}</b><span>gün aşım</span></div>
     <div class="tile warn"><b>${A.under}</b><span>gün çok az</span></div>
     <div class="tile ${A.harmCount?"bad":"good"}"><b>${A.harmCount}</b><span>kez zararlı gıda</span></div>
-    <div class="tile ${A.missed.length?"bad":A.taken.length?"good":""}"><b>${A.missed.length}</b><span>gün ilaç atlandı (${A.taken.length} gün alındı)</span></div>
+    ${noMed()?"":`<div class="tile ${A.missed.length?"bad":A.taken.length?"good":""}"><b>${A.missed.length}</b><span>gün ilaç atlandı (${A.taken.length} gün alındı)</span></div>`}
     <div class="tile ${A.waN?A.waHit===A.waN?"good":"warn":""}"><b>${A.waHit}/${A.waN}</b><span>gün su hedefi tuttu</span></div>
     <div class="tile"><b>${A.waN?fmtL(A.waAvg):"–"}</b><span>ort. su (L / gün)</span></div>
   </div>
@@ -1646,7 +1654,7 @@ function vReport(){
     <div class="split" aria-hidden="true"><i style="width:${A.pct("ok")}%;background:var(--good)"></i><i style="width:${A.pct("care")}%;background:var(--warn)"></i><i style="width:${A.pct("no")}%;background:var(--bad)"></i></div>
     <div class="legend" style="margin-top:6px"><span><i style="background:var(--good)"></i>Yiyebilirsin %${A.pct("ok")}</span><span><i style="background:var(--warn)"></i>Dikkatli %${A.pct("care")}</span><span><i style="background:var(--bad)"></i>Uzak dur %${A.pct("no")}</span></div>
     ${qc}</section>
-  <section class="card"><h2>İlaç takibi</h2>${meds}${missedList}${(()=>{const M=suppsL();if(!M.length)return "";return `<div style="margin-top:12px"><span class="label">Takviyeler</span>${M.map(sp=>{const n=A.I.filter(i=>{const D=S.days[i.k];return D&&D.sup&&D.sup[sp.id]}).length,tot=A.I.filter(i=>i.med!=="future"&&i.med!=="none").length;return `<div class="kv small" style="margin-top:6px"><span>${esc(sp.name)}</span><b>${n} / ${tot} gün</b></div>`}).join("")}</div>`})()}</section>
+  ${noMed()&&!suppsL().length?"":`<section class="card"><h2>${noMed()?"Takviyeler":"İlaç takibi"}</h2>${noMed()?"":meds+missedList}${(()=>{const M=suppsL();if(!M.length)return "";return `<div style="margin-top:${noMed()?6:12}px"><span class="label">Takviyeler</span>${M.map(sp=>{const n=A.I.filter(i=>{const D=S.days[i.k];return D&&D.sup&&D.sup[sp.id]}).length,tot=A.I.filter(i=>i.med!=="future"&&i.med!=="none").length;return `<div class="kv small" style="margin-top:6px"><span>${esc(sp.name)}</span><b>${n} / ${tot} gün</b></div>`}).join("")}</div>`})()}</section>`}
   ${(()=>{const Sy=symStats(keys);if(!Sy._days)return "";return `<section class="card" style="display:flex;flex-direction:column;gap:10px"><div style="display:flex;justify-content:space-between;align-items:baseline"><h2>Belirtiler</h2><span class="small muted">${Sy._days} gün · ort. ${numTR(Sy._avg,1)}/4</span></div>${SYMS.filter(([id])=>Sy[id].avg!=null).map(([id,n])=>{const a=Sy[id].avg;return `<div class="macro"><div class="head"><span><b>${n}</b></span><span>${numTR(a,1)} / 4</span></div><div class="bar"><i style="width:${a/4*100}%;background:${a>=2.5?"var(--bad)":a>=1.5?"var(--warn)":"var(--good)"}"></i></div></div>`}).join("")}</section>`})()}
   ${(()=>{const Lb=labsL().filter(l=>l.date>=keys[0]&&l.date<=keys[keys.length-1]).sort((x,y)=>x.date<y.date?-1:1);if(!Lb.length)return "";return `<section class="card"><h2>Tahliller</h2>${Lb.map(l=>{const[c,t]=labStatus(l);return `<div class="entry"><div class="n"><span class="nm">${esc(labName(l))}: ${numTR(l.v)} ${esc(l.u||"")}</span><span class="tag lab-${c}">${t}</span><small>${fmtShort(l.date)}</small></div></div>`}).join("")}</section>`})()}
   <section class="card" style="display:flex;flex-direction:column;gap:10px"><h2>Protein, yağ, karbonhidrat</h2>${macroBars(A)}</section>
@@ -1658,7 +1666,7 @@ let wTxt2="";
 function vReportDay(i){
   const balTxt={over:`Hedefini <b style="color:var(--bad)">${r0(i.t.k-i.tar)} kcal aştın</b>.`,under:`Hedefinin <b style="color:var(--warn)">${r0(i.tar-i.t.k)} kcal altında</b> kaldın; çok az yemek de metabolizmayı yavaşlatır.`,ok:`Kalori dengen <b style="color:var(--good)">yerinde</b>.`};
   const harm=i.entries.filter(e=>stOf(e)==="no");
-  const medTxt={taken:`İlacını <b>${i.medAt}</b>'te aldın.`,missed:`İlacını <b style="color:var(--bad)">almadın</b>.`,pending:"İlaç saati henüz geçmedi.",none:"Bu gün için ilaç kaydı yok.",future:""}[i.med];
+  const medTxt={taken:`İlacını <b>${i.medAt}</b>'te aldın.`,missed:`İlacını <b style="color:var(--bad)">almadın</b>.`,pending:"İlaç saati henüz geçmedi.",none:"Bu gün için ilaç kaydı yok.",future:"",off:""}[i.med];
   const pvw=i.w?prevWeight(i.k):null;
   const wTxt=i.w?`Kilon <b>${fmtKg(i.w)} kg</b>${pvw?` (${fmtShort(pvw.k)} tarihine göre ${fmtDiff(i.w-pvw.w)} kg)`:""}.`:"Bu gün kilo ölçümü yok.";
   const D=S.days[i.k]||{},sy=D.sym||{};const syP=SYMS.filter(([id])=>sy[id]>0).map(([id,n])=>`${n.toLocaleLowerCase("tr-TR")} ${sy[id]}`);
@@ -1745,9 +1753,9 @@ function histChart(S2,a,b,kind){
 function evaluate2(C,P,hasPrev){
   const o=[],add=(l,t)=>o.push({l,t});const A=C.A;
   if(C.tracked&&C.A.n/C.tracked<0.7)add("info",`Dönemin ${C.tracked} gününün ${C.A.n} gününde yiyecek kaydı var; kalori ve beslenme değerleri eksik olabilir.`);
-  if(C.taken+C.missed){let t=`İlaç ${C.taken} gün alındı, ${C.missed} gün atlandı.`;if(hasPrev&&P.taken+P.missed)t+=` Önceki dönem: ${P.taken} gün alındı, ${P.missed} gün atlandı.`;add(C.missed>(hasPrev?P.missed:0)&&C.missed>1?"warn":C.missed?"info":"good",t)}
-  if(C.tAvg!=null&&C.taken>=3)add(C.tSd>45?"warn":"good",`İlaç ortalama ${mmToHM(C.tAvg)}'te alındı (en erken ${mmToHM(C.tMin)}, en geç ${mmToHM(C.tMax)}, ±${Math.round(C.tSd)} dk).`);
-  if(C.inter)add("warn",`${C.inter} gün, ilaçtan sonra önerilen bekleme süresi dolmadan yiyecek/içecek kaydı var (${topN(C.interItems,4).join(", ")}). Kayıt saatine göre hesaplanmıştır.`);
+  if(C.taken+C.missed&&!noMed()){let t=`İlaç ${C.taken} gün alındı, ${C.missed} gün atlandı.`;if(hasPrev&&P.taken+P.missed)t+=` Önceki dönem: ${P.taken} gün alındı, ${P.missed} gün atlandı.`;add(C.missed>(hasPrev?P.missed:0)&&C.missed>1?"warn":C.missed?"info":"good",t)}
+  if(C.tAvg!=null&&C.taken>=3&&!noMed())add(C.tSd>45?"warn":"good",`İlaç ortalama ${mmToHM(C.tAvg)}'te alındı (en erken ${mmToHM(C.tMin)}, en geç ${mmToHM(C.tMax)}, ±${Math.round(C.tSd)} dk).`);
+  if(C.inter&&!noMed())add("warn",`${C.inter} gün, ilaçtan sonra önerilen bekleme süresi dolmadan yiyecek/içecek kaydı var (${topN(C.interItems,4).join(", ")}). Kayıt saatine göre hesaplanmıştır.`);
   if(C.wN){let t=`Kilo dönem başında ${fmtKg(C.wStart)} kg, sonunda ${fmtKg(C.wEnd)} kg (${fmtDiff(C.wDelta)} kg).`;if(C.rate!=null&&C.wN>=3)t+=` Haftalık ortalama ${fmtDiff(C.rate)} kg.`;
     if(hasPrev&&P.wN)t+=` Önceki dönemde değişim ${fmtDiff(P.wDelta)} kg idi.`;add(C.rate!=null&&C.rate<-1?"warn":"info",t)}
   if(A.n){const r=A.avg/A.avgTar;let t=`Ortalama günlük alım ${r0(A.avg)} kcal (hedef ${r0(A.avgTar)}); ${A.ok} gün hedefte, ${A.over} gün aşım, ${A.under} gün çok düşük.`;
@@ -1795,7 +1803,8 @@ function doctorHTML(a,b,notes,withDaily){
   const ld=k=>parseKey(k).toLocaleDateString("tr-TR",{day:"numeric",month:"long",year:"numeric"});
   const i0=v=>nf(v,0),i1=v=>nf(v,1),kg=v=>fmtKg(v),hm=v=>mmToHM(v);
   const P_=hasPrev?P:{A:{}};
-  const rows=[
+  const nm=noMed();
+  const rows=[...(nm?[]:[
     `<tr class="grp"><th colspan="4">İlaç (${esc(st.medName)}, plan ${st.medTime})</th></tr>`,
     (()=>{const pv=hasPrev?P.doseEnd:null,cv=C.doseEnd;if(!pv&&!cv)return"";const ch=doseChange(pv,cv);
       return `<tr><th>İlaç ve doz (dönem sonu)</th><td style="white-space:normal">${pv?esc(fmtDoseFull(pv)):"–"}</td><td style="white-space:normal"><b>${cv?esc(fmtDoseFull(cv)):"–"}</b></td><td style="white-space:normal;color:var(--prot);font-weight:700">${ch?(ch.kind==="same"?"=":esc(ch.t)):""}</td></tr>`})(),
@@ -1803,7 +1812,7 @@ function doctorHTML(a,b,notes,withDaily){
     cmpRow("Atlanan gün",hasPrev?P.missed:null,C.missed,"low",i0,"gün"),
     hasPrev&&P.tAvg!=null||C.tAvg!=null?cmpText("Ortalama alma saati",hasPrev&&P.tAvg!=null?hm(P.tAvg):"–",C.tAvg!=null?hm(C.tAvg):"–"):"",
     cmpRow("Saat sapması (±dk)",hasPrev?P.tSd:null,C.tSd,"low",i0,"dk"),
-    cmpRow("İlaç sonrası erken yiyecek",hasPrev?P.inter:null,C.inter,"low",i0,"gün"),
+    cmpRow("İlaç sonrası erken yiyecek",hasPrev?P.inter:null,C.inter,"low",i0,"gün")]),
     `<tr class="grp"><th colspan="4">Kilo</th></tr>`,
     cmpRow("Dönem sonu kilo",hasPrev&&P.wN?P.wEnd:null,C.wN?C.wEnd:null,st.goalW&&C.wEnd>st.goalW?"low":"none",kg,"kg"),
     cmpRow("Dönem içi değişim",hasPrev&&P.wN?P.wDelta:null,C.wN?C.wDelta:null,"none",v=>fmtDiff(v),"kg"),
@@ -1834,7 +1843,7 @@ function doctorHTML(a,b,notes,withDaily){
   // aylık gidişat
   const months=[];keysBetween(fk<a?fk:a,b).forEach(k=>{const m=k.slice(0,7);let r=months[months.length-1];if(!r||r.m!==m)months.push(r={m,keys:[]});r.keys.push(k)});
   const mrows=months.slice(-12).map(r=>{const M=metrics(r.keys),inP=r.keys[r.keys.length-1]>=a&&r.keys[0]<=b;const [y,mo]=r.m.split("-");
-    return `<tr class="${inP?"cur":""}"><td>${MONTHS[+mo-1]} ${y}</td><td>${M.taken}</td><td class="${M.missed?"bad":""}">${M.missed}</td><td style="white-space:nowrap">${(()=>{const e=r.keys[r.keys.length-1],d=doseOn(e<b?e:b),ch=doseChange(doseOn(shiftKey(r.keys[0],-1)),d),ar=ch?{up:"▲ ",down:"▼ ",switch:"↔ "}[ch.kind]||"":"";return d?ar+esc(fmtDose(d)):"–"})()}</td><td>${M.A.n?i0(M.A.avg):"–"}</td><td style="white-space:nowrap">${M.A.waN?`${fmtL(M.A.waAvg)} L · ${M.A.waHit}/${M.A.waN}`:"–"}</td><td>${M.wN?kg(M.wAvg):"–"}</td><td>${M.wN>1?fmtDiff(M.wDelta):"–"}</td><td>${M.A.harmCount||"–"}</td><td>${M.fl.alcohol.size||"–"}</td><td>${M.sym._avg!=null?nf(M.sym._avg,1):"–"}</td><td>${(()=>{const t=labsL().filter(l=>l.code==="TSH"&&l.date>=r.keys[0]&&l.date<=r.keys[r.keys.length-1]).sort((x,y)=>x.date<y.date?-1:1);return t.length?`<span class="${labStatus(t[t.length-1])[0]==="ok"?"":"bad"}">${numTR(t[t.length-1].v)}</span>`:"–"})()}</td><td>${M.A.n}/${M.tracked}</td></tr>`}).join("");
+    return `<tr class="${inP?"cur":""}"><td>${MONTHS[+mo-1]} ${y}</td>${nm?"":`<td>${M.taken}</td><td class="${M.missed?"bad":""}">${M.missed}</td><td style="white-space:nowrap">${(()=>{const e=r.keys[r.keys.length-1],d=doseOn(e<b?e:b),ch=doseChange(doseOn(shiftKey(r.keys[0],-1)),d),ar=ch?{up:"▲ ",down:"▼ ",switch:"↔ "}[ch.kind]||"":"";return d?ar+esc(fmtDose(d)):"–"})()}</td>`}<td>${M.A.n?i0(M.A.avg):"–"}</td><td style="white-space:nowrap">${M.A.waN?`${fmtL(M.A.waAvg)} L · ${M.A.waHit}/${M.A.waN}`:"–"}</td><td>${M.wN?kg(M.wAvg):"–"}</td><td>${M.wN>1?fmtDiff(M.wDelta):"–"}</td><td>${M.A.harmCount||"–"}</td><td>${M.fl.alcohol.size||"–"}</td><td>${M.sym._avg!=null?nf(M.sym._avg,1):"–"}</td><td>${(()=>{const t=labsL().filter(l=>l.code==="TSH"&&l.date>=r.keys[0]&&l.date<=r.keys[r.keys.length-1]).sort((x,y)=>x.date<y.date?-1:1);return t.length?`<span class="${labStatus(t[t.length-1])[0]==="ok"?"":"bad"}">${numTR(t[t.length-1].v)}</span>`:"–"})()}</td><td>${M.A.n}/${M.tracked}</td></tr>`}).join("");
   const css=`:root{--ink:#17231F;--muted:#5C6C66;--line:#D5DED9;--sunk:#EEF2EF;--accent:#23584E;--good:#247545;--warn:#A16207;--bad:#B91C1C;--prot:#2563EB}
   @page{size:A4;margin:13mm 12mm}*{box-sizing:border-box}body{font-family:"Segoe UI",Roboto,"Noto Sans",Arial,sans-serif;color:var(--ink);font-size:9.6pt;line-height:1.4;margin:0;background:#fff}
   h1{font-size:15pt;margin:0;color:var(--accent)}h2{font-size:10.5pt;margin:0 0 5px;color:var(--accent);text-transform:uppercase;letter-spacing:.06em;break-after:avoid;page-break-after:avoid}
@@ -1852,25 +1861,25 @@ function doctorHTML(a,b,notes,withDaily){
   .ev li::before{content:"";position:absolute;left:0;top:8px;width:7px;height:7px;border-radius:50%;background:var(--muted)}.ev li.good::before{background:var(--good)}.ev li.warn::before{background:var(--warn)}
   .note{border:1px solid var(--line);border-radius:4px;padding:6px 8px;white-space:pre-wrap}.foot{margin-top:10px;font-size:7.8pt;color:var(--muted);border-top:1px solid var(--line);padding-top:5px}
   .dl td,.dl th{font-size:8.6pt;padding:2.5px 5px}.over{color:var(--bad)}.under{color:var(--warn)}.ok{color:var(--good)}`;
-  const daily=withDaily?`<section class="flow" style="break-before:page;page-break-before:always"><h2>Ek: günlük kayıtlar</h2><table class="dl"><thead><tr><th>Tarih</th><th>Kalori</th><th>Hedef</th><th>İlaç</th><th>Su</th><th>Kilo</th><th>“Uzak dur” grubundan</th></tr></thead><tbody>
-    ${A.I.filter(i=>i.med!=="future").map(i=>`<tr><td>${parseKey(i.k).toLocaleDateString("tr-TR",{day:"2-digit",month:"2-digit",weekday:"short"})}</td><td class="${i.bal||""}">${i.has?r0(i.t.k):"–"}</td><td>${i.has?i.tar:"–"}</td><td class="${i.med==="missed"?"bad":""}">${i.medAt||(i.med==="missed"?"Alınmadı":"–")}</td><td class="${i.water&&i.water<i.wg?"under":i.water?"ok":""}">${i.water?numTR(i.water,0)+" ml":"–"}</td><td>${i.w?kg(i.w):"–"}</td><td>${esc([...new Set(i.entries.filter(e=>stOf(e)==="no").map(e=>e.n))].join(", "))}</td></tr>`).join("")}</tbody></table></section>`:"";
+  const daily=withDaily?`<section class="flow" style="break-before:page;page-break-before:always"><h2>Ek: günlük kayıtlar</h2><table class="dl"><thead><tr><th>Tarih</th><th>Kalori</th><th>Hedef</th>${nm?"":"<th>İlaç</th>"}<th>Su</th><th>Kilo</th><th>“Uzak dur” grubundan</th></tr></thead><tbody>
+    ${A.I.filter(i=>i.med!=="future").map(i=>`<tr><td>${parseKey(i.k).toLocaleDateString("tr-TR",{day:"2-digit",month:"2-digit",weekday:"short"})}</td><td class="${i.bal||""}">${i.has?r0(i.t.k):"–"}</td><td>${i.has?i.tar:"–"}</td>${nm?"":`<td class="${i.med==="missed"?"bad":""}">${i.medAt||(i.med==="missed"?"Alınmadı":"–")}</td>`}<td class="${i.water&&i.water<i.wg?"under":i.water?"ok":""}">${i.water?numTR(i.water,0)+" ml":"–"}</td><td>${i.w?kg(i.w):"–"}</td><td>${esc([...new Set(i.entries.filter(e=>stOf(e)==="no").map(e=>e.n))].join(", "))}</td></tr>`).join("")}</tbody></table></section>`:"";
   const bmi=st.heightCm&&C.wN?C.wEnd/((st.heightCm/100)**2):null;
   return `<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Tiroid takip raporu ${a} – ${b}</title><style>${css}</style></head><body>
-  <div class="hdr"><div><h1>Tiroid takip raporu</h1><div style="margin-top:2px">${st.reportName?`<b>${esc(st.reportName)}</b> · `:""}Haşimato tiroiditi · beslenme, ilaç ve kilo kayıtları</div></div>
+  <div class="hdr"><div><h1>Tiroid takip raporu</h1><div style="margin-top:2px">${st.reportName?`<b>${esc(st.reportName)}</b> · `:""}Haşimato tiroiditi · beslenme, ${nm?"":"ilaç ve "}kilo kayıtları</div></div>
    <div class="meta"><span>Rapor dönemi</span><b>${ld(a)} – ${ld(b)} (${len} gün)</b><span>Karşılaştırma</span><b>${hasPrev?`${ld(pa)} – ${ld(pb)}`:"Önceki kayıt yok"}</b><span>Takip başlangıcı</span><b>${ld(fk)}</b>
-   <span>İlaç / plan</span><b>${esc(C.doseEnd?fmtDoseFull(C.doseEnd):st.medName)} · ${st.medTime}</b><span>Kalori hedefi</span><b>${st.kcal} kcal/gün</b>${st.goalW?`<span>Hedef kilo</span><b>${kg(+st.goalW)} kg</b>`:""}${st.heightCm?`<span>Boy${bmi?" / VKİ":""}</span><b>${st.heightCm} cm${bmi?" / "+nf(bmi,1):""}</b>`:""}</div></div>
+   <span>İlaç / plan</span><b>${nm?"İlaç kullanmıyor":`${esc(C.doseEnd?fmtDoseFull(C.doseEnd):st.medName)} · ${st.medTime}`}</b><span>Kalori hedefi</span><b>${st.kcal} kcal/gün</b>${st.goalW?`<span>Hedef kilo</span><b>${kg(+st.goalW)} kg</b>`:""}${st.heightCm?`<span>Boy${bmi?" / VKİ":""}</span><b>${st.heightCm} cm${bmi?" / "+nf(bmi,1):""}</b>`:""}</div></div>
   <section class="flow"><h2>Dönem karşılaştırması</h2><table class="cmp"><thead><tr><th>Ölçüt</th><th>Önceki dönem</th><th>Bu dönem</th><th>Değişim</th></tr></thead><tbody>${rows}</tbody></table>
    <p class="cap">Önceki dönem, rapor dönemiyle aynı uzunlukta hemen önceki aralıktır. Yeşil iyileşme, kırmızı kötüleşme yönündeki değişimi gösterir.</p></section>
   <section><h2>Bu dönemin özeti</h2><ul class="ev">${E.map(x=>`<li class="${x.l}">${esc(x.t)}</li>`).join("")||"<li>Yeterli kayıt yok.</li>"}</ul></section>
   ${doseSection(a,b)}
   ${labsSection(a,b)}
   ${showHist?`<section><h2>Takip başından bugüne</h2><div class="two"><div><b style="font-size:9pt">Haftalık ortalama kilo</b>${histChart(Hs,a,b,"w")||'<p class="cap">Yeterli kilo ölçümü yok.</p>'}</div><div><b style="font-size:9pt">Haftalık ortalama kalori</b>${histChart(Hs,a,b,"k")}<p class="cap">Yeşil hedefte, kırmızı aşım, sarı çok düşük; kesikli çizgi hedef.</p></div></div></section>`:""}
-  <section><h2>Aylık gidişat</h2><table class="trend"><thead><tr><th>Ay</th><th>İlaç alındı</th><th>Atlandı</th><th>Doz</th><th>Ort. kcal</th><th>Su</th><th>Ort. kilo</th><th>Kilo değ.</th><th>“Uzak dur”</th><th>Alkol gün</th><th>Belirti</th><th>TSH</th><th>Kayıt</th></tr></thead><tbody>${mrows}</tbody></table>
-   <p class="cap">Vurgulu satırlar rapor dönemine denk gelen aylardır. “Kayıt”: yiyecek kaydı olan gün / takip edilen gün. “Su”: günlük ortalama ve hedefe ulaşılan gün / su kaydı olan gün. “Doz”: ay sonundaki doz; ▲ artış, ▼ azalış, ↔ ilaç değişikliği.</p></section>
+  <section><h2>Aylık gidişat</h2><table class="trend"><thead><tr><th>Ay</th>${nm?"":"<th>İlaç alındı</th><th>Atlandı</th><th>Doz</th>"}<th>Ort. kcal</th><th>Su</th><th>Ort. kilo</th><th>Kilo değ.</th><th>“Uzak dur”</th><th>Alkol gün</th><th>Belirti</th><th>TSH</th><th>Kayıt</th></tr></thead><tbody>${mrows}</tbody></table>
+   <p class="cap">Vurgulu satırlar rapor dönemine denk gelen aylardır. “Kayıt”: yiyecek kaydı olan gün / takip edilen gün. “Su”: günlük ortalama ve hedefe ulaşılan gün / su kaydı olan gün. ${nm?"":"“Doz”: ay sonundaki doz; ▲ artış, ▼ azalış, ↔ ilaç değişikliği."}</p></section>
   <section><h2>Dönem ayrıntıları</h2><table class="kv2"><tbody>
    ${C.supp.length?`<tr><th>Takviyeler</th><td>${C.supp.map(x=>`${esc(x.sp.name)} (plan ${x.sp.time}, ${x.taken}/${C.tracked} gün)`).join(", ")}</td></tr>`:""}
    ${C.sym._notes.length?`<tr><th>Belirti notları</th><td>${C.sym._notes.slice(-5).map(([k,n])=>`${fmtShort(k)}: ${esc(n)}`).join("; ")}</td></tr>`:""}
-   <tr><th>Atlanan ilaç günleri</th><td>${C.missed?C.missedDays.map(sd).join(", "):"Yok"}</td></tr>
+   ${nm?"":`<tr><th>Atlanan ilaç günleri</th><td>${C.missed?C.missedDays.map(sd).join(", "):"Yok"}</td></tr>`}
    ${C.wN?`<tr><th>Kilo aralığı</th><td>en düşük ${kg(C.wMin)} kg · en yüksek ${kg(C.wMax)} kg · ${C.wN} ölçüm</td></tr>`:""}
    <tr><th>Kalori kaynağı</th><td>uygun %${A.pct("ok")} · dikkatli %${A.pct("care")} · uzak dur %${A.pct("no")}</td></tr>
    <tr><th>“Uzak dur” grubundan</th><td>${A.harm.length?A.harm.slice(0,6).map(f=>`${esc(f.n)} (${f.c})`).join(", "):"Yok"}</td></tr>
@@ -2051,6 +2060,7 @@ $("#view").addEventListener("input",e=>{const t=e.target;
   else if(t.dataset.ig!==undefined){const i=draft.items[+t.dataset.ig];i.g=Math.max(0,+t.value||0);$("#ik"+t.dataset.ig).textContent=r0(i.k*i.g/100)+" kcal";updTot()}
 });
 $("#view").addEventListener("change",e=>{const t=e.target;
+  if(t.id==="sNoMed"){const bx=$("#sMedBox");if(bx)bx.style.display=t.checked?"none":"flex"}
   if(t.id==="bkAuto"){S.settings.autoBk=+t.value;saveSettings();toast(+t.value?"Otomatik yedek açık":"Otomatik yedek kapalı");if(+t.value)autoBackup()}
   if(t.id==="bkFile"&&t.files&&t.files[0]){const fr=new FileReader();fr.onload=()=>confirmRestore(String(fr.result));fr.onerror=()=>toast("Dosya okunamadı");fr.readAsText(t.files[0]);t.value=""}
   if(t.id==="dPick"&&t.value){vDay=t.value>todayKey()?todayKey():t.value;wEdit=medEdit=false;render()}});
@@ -2129,7 +2139,7 @@ $("#view").addEventListener("click",e=>{const b=e.target.closest("button");if(!b
   else if(b.id==="bkLoad"){confirmRestore($("#bkText").value)}
   else if(b.id==="saveSet"){const st=S.settings;
     st.kcal=Math.max(800,Math.min(5000,+$("#sKcal").value||1800));st.pPct=+$("#sP").value||0;st.fPct=+$("#sF").value||0;st.cPct=+$("#sC").value||0;
-    st.carry=$("#sCarry").checked;st.medName=$("#sMed").value.trim()||"İlacım";st.medTime=$("#sMedT").value||"08:45";
+    st.carry=$("#sCarry").checked;st.noMed=$("#sNoMed").checked;st.medName=$("#sMed").value.trim()||"İlacım";st.medTime=$("#sMedT").value||"08:45";
     st.weightOn=$("#sWOn").checked;st.weightTime=$("#sWT").value||"08:50";{const g=parseFloat(($("#sGoal").value||"").replace(",","."));st.goalW=g>=30&&g<=300?g:null}
     st.waterGoal=Math.max(500,Math.min(6000,Math.round(+$("#sWater").value||2000)));
     const d=day(k);if(!d.entries.length)d.target=targetFor(k).kcal;{const td=S.days[todayKey()];if(td&&td.wg){td.wg=st.waterGoal;saveDay(todayKey())}}
@@ -2138,7 +2148,8 @@ $("#view").addEventListener("click",e=>{const b=e.target.closest("button");if(!b
 document.addEventListener("keydown",e=>{if(e.key==="Escape")document.querySelectorAll(".scrim").forEach(x=>x.remove())});
 
 lsLoad();
-function pushReminder(){try{if(window.Android&&Android.setReminder)Android.setReminder(S.settings.medTime,S.settings.medName)}catch(e){}
+function pushReminder(){const on=!!S.settings.welcomed&&!noMed();
+  try{if(window.Android){if(Android.setMedReminder)Android.setMedReminder(S.settings.medTime,S.settings.medName,on);else if(on&&Android.setReminder)Android.setReminder(S.settings.medTime,S.settings.medName)}}catch(e){}
   try{if(window.Android&&Android.setWeightReminder)Android.setWeightReminder(S.settings.weightTime||"08:50",!!S.settings.weightOn)}catch(e){}
   try{if(window.Android&&Android.setSupplements)Android.setSupplements(JSON.stringify(suppsL().filter(x=>x.on).map(x=>({id:x.id,name:x.name,time:x.time}))))}catch(e){}}
 function syncNative(){try{if(!window.Android||!Android.takenFromNotification)return;const v=Android.takenFromNotification();
@@ -2146,11 +2157,11 @@ function syncNative(){try{if(!window.Android||!Android.takenFromNotification)ret
   try{if(window.Android&&Android.suppTaken){const a=JSON.parse(Android.suppTaken()||"[]");a.forEach(x=>{const[dk,id,at]=String(x).split("|");if(dk&&id&&at){const d=day(dk);(d.sup||(d.sup={}))[id]=at;saveDay(dk)}});if(a.length)render()}}catch(e){}
   try{if(window.Android&&Android.openTarget&&Android.openTarget()==="weight"){vDay=todayKey();document.querySelectorAll(".scrim").forEach(x=>x.remove());tab="today";render();window.scrollTo(0,0);setTimeout(()=>{const i=$("#wIn");if(i)i.focus()},150)}}catch(e){}}
 window.onNativeResume=()=>{syncNative();render();setTimeout(()=>autoBackup(),1500)};
-pushReminder();
 try{const t=localStorage.getItem(LS+"-tab");if(t)tab=t}catch(e){}
 render();
 const hasData=()=>Object.values(S.days).some(d=>d&&((d.entries&&d.entries.length)||d.med||d.w));
 if(!S.settings.welcomed){if(hasData()){S.settings.welcomed=true;saveSettings()}else showOnboarding()}
+pushReminder();
 syncNative();
 setTimeout(()=>autoBackup(),3000);
 initCloud();
