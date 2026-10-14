@@ -70,6 +70,7 @@ h2{font-family:var(--f-display);font-size:16px;font-weight:600;margin:0}
 .macro .head span:last-child{font-variant-numeric:tabular-nums;color:var(--muted);font-size:13px}
 .bar{height:8px;border-radius:99px;background:var(--sunk);overflow:hidden;margin-top:5px}
 .bar i{display:block;height:100%;border-radius:99px}
+.wrow .btn{white-space:nowrap;padding-left:8px;padding-right:8px}
 .left{font-size:12.5px;margin-top:3px;font-variant-numeric:tabular-nums}
 .left.over{color:var(--bad);font-weight:700}
 .left.ok{color:var(--muted)}
@@ -925,7 +926,21 @@ function waterCard(k){const d=day(k),w=d.water||0,g=waterGoalOn(k),pct=Math.min(
   return `<section class="card" style="display:flex;flex-direction:column;gap:10px"><div class="med">${ico}<div class="txt"><b>${dayWord(k)} ${fmtL(w)} / ${fmtL(g)} L su</b><div class="small" style="${hit?"color:var(--good);font-weight:700":""}">${hit?"Günlük su hedefine ulaştın":w?`Hedefe ${numTR(g-w,0)} ml kaldı · 1 bardak 200 ml`:today?"Henüz su kaydı yok":"Bu gün için su kaydı yok"}</div></div></div>
     <div class="bar" style="margin-top:0"><i style="width:${pct}%;background:${hit?"var(--good)":"#2563EB"}"></i></div>
     <div aria-hidden="true" style="display:flex;flex-wrap:wrap;gap:4px;font-size:15px;line-height:1">${[...Array(glasses)].map((_,i)=>`<span style="opacity:${i<full?1:.25}">💧</span>`).join("")}</div>
-    <div class="row" style="flex-wrap:nowrap"><button class="btn ghost" data-wadd="-200" ${w?"":"disabled"} aria-label="200 ml çıkar" style="flex:0 0 52px;min-width:0;padding-left:0;padding-right:0">−</button><button class="btn primary" data-wadd="200" aria-label="1 bardak (200 ml) ekle" style="flex:1;min-width:0">+ Bardak</button><button class="btn" data-wadd="500" style="flex:1;min-width:0">+500 ml</button></div></section>`}
+    <div class="row wrow" style="flex-wrap:nowrap;gap:6px"><button class="btn ghost" data-wadd="-200" ${w?"":"disabled"} aria-label="200 ml çıkar" style="flex:0 0 52px;min-width:0;padding-left:0;padding-right:0">−</button><button class="btn primary" data-wadd="200" aria-label="1 bardak (200 ml) ekle" style="flex:1;min-width:0">+ Bardak</button><button class="btn" data-wadd="${waterQuick()}" style="flex:1;min-width:0">+${waterQuick()} ml</button><button class="btn ghost" id="wOther" aria-label="Başka miktar gir" style="flex:0 0 auto;min-width:0">Diğer</button></div></section>`}
+// "Diğer" ile girilen son miktar hızlı düğmede kalır
+const waterQuick=()=>Math.round(+S.settings.waterQuick)||500;
+function openWaterAdd(k){const sc=document.createElement("div");sc.className="scrim";
+  sc.innerHTML=`<div class="sheet" role="dialog" aria-modal="true" aria-label="Su ekle"><h2 style="font-size:18px">Su ekle</h2>
+   <div class="field"><label for="waV">Miktar (ml)</label><input id="waV" type="number" inputmode="numeric" min="1" max="5000" step="1" placeholder="Örn. 330" value="${waterQuick()}"></div>
+   <div class="chips">${[200,250,330,400,500,750,1000,1500].map(v=>`<button class="chip" data-wav="${v}">${numTR(v,0)} ml</button>`).join("")}</div>
+   <div class="row"><button class="btn ghost" id="waCancel">Vazgeç</button><button class="btn primary" id="waOk">Ekle</button></div></div>`;
+  document.body.appendChild(sc);const inp=$("#waV");inp.focus();inp.select();
+  const ok=()=>{const v=Math.round(+(inp.value||"").replace(",","."));if(!(v>0&&v<=5000)){inp.focus();return}
+    const d=day(k);d.water=(d.water||0)+v;if(!d.wg)d.wg=waterGoalOn(k);S.settings.waterQuick=v;saveSettings();saveDay(k);sc.remove();toast(`${numTR(v,0)} ml eklendi`);render()};
+  inp.addEventListener("keydown",e=>{if(e.key==="Enter")ok()});
+  sc.addEventListener("click",e=>{const b=e.target.closest("button");if(e.target===sc||(b&&b.id==="waCancel")){sc.remove();return}if(!b)return;
+    if(b.dataset.wav){inp.value=b.dataset.wav}
+    if(b.id==="waOk")ok()})}
 const fmtKg=v=>v==null?"–":(Math.round(v*10)/10).toLocaleString("tr-TR",{minimumFractionDigits:1,maximumFractionDigits:1});
 const fmtDiff=v=>(v>0?"+":v<0?"−":"±")+fmtKg(Math.abs(v));
 function prevWeight(k){const ks=Object.keys(S.days).filter(x=>x<k&&S.days[x]&&S.days[x].w).sort();return ks.length?{k:ks[ks.length-1],w:S.days[ks[ks.length-1]].w}:null}
@@ -2059,6 +2074,7 @@ $("#view").addEventListener("click",e=>{const b=e.target.closest("button");if(!b
   else if(b.dataset.srange){symRange=+b.dataset.srange;render()}
   else if(b.id==="spAdd"){openSuppEdit()}
   else if(b.dataset.spedit){openSuppEdit(b.dataset.spedit)}
+  else if(b.id==="wOther"){openWaterAdd(k)}
   else if(b.dataset.wadd){const d=day(k);d.water=Math.max(0,(d.water||0)+(+b.dataset.wadd));if(d.water){if(!d.wg)d.wg=waterGoalOn(k)}else{delete d.water;delete d.wg}saveDay(k);render()}
   else if(b.id==="doseAdd"){openDoseAdd()}
   else if(b.dataset.dedit){openDoseAdd(b.dataset.dedit)}
