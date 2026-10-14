@@ -1,15 +1,51 @@
 package com.backpacker.tiroiddefterim;
 
+import android.app.Activity;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.print.PrintAttributes;
+import android.print.PrintDocumentAdapter;
+import android.print.PrintManager;
 import android.webkit.JavascriptInterface;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 
 /** Sayfanın telefonla konuştuğu köprü: window.Android */
 public class Bridge {
     private final Context ctx;
-    Bridge(Context c) { ctx = c.getApplicationContext(); }
+    private final Activity act;
+    private static WebView printView;
+    Bridge(Activity a) { act = a; ctx = a.getApplicationContext(); }
+
+    /** Raporu Android'in yazdırma ekranında açar; oradan "PDF olarak kaydet" seçilebilir. */
+    @JavascriptInterface
+    public void printHtml(final String html, final String name) {
+        act.runOnUiThread(() -> {
+            final WebView pv = new WebView(act);
+            printView = pv;
+            pv.getSettings().setJavaScriptEnabled(false);
+            pv.setWebViewClient(new WebViewClient() {
+                boolean done = false;
+                @Override
+                public void onPageFinished(WebView view, String url) {
+                    if (done) return;
+                    done = true;
+                    PrintManager pm = (PrintManager) act.getSystemService(Context.PRINT_SERVICE);
+                    if (pm == null) return;
+                    String job = (name == null || name.isEmpty()) ? "Tiroid-raporu" : name;
+                    PrintDocumentAdapter ad = view.createPrintDocumentAdapter(job);
+                    PrintAttributes attrs = new PrintAttributes.Builder()
+                            .setMediaSize(PrintAttributes.MediaSize.ISO_A4)
+                            .setMinMargins(PrintAttributes.Margins.NO_MARGINS)
+                            .build();
+                    pm.print(job, ad, attrs);
+                }
+            });
+            pv.loadDataWithBaseURL(null, html, "text/html", "utf-8", null);
+        });
+    }
 
     static SharedPreferences prefs(Context c) {
         return c.getSharedPreferences("tiroid", Context.MODE_PRIVATE);

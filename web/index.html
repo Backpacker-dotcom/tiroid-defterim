@@ -1282,7 +1282,8 @@ function vReport(){
   const seg=`<div class="seg" role="group" aria-label="Rapor dönemi">${[["day","Gün"],["week","Hafta"],["month","Ay"],["year","Yıl"]].map(([k,l])=>`<button data-rp="${k}" aria-pressed="${rp===k}">${l}</button>`).join("")}</div>`;
   const isNow=keys.includes(tk);
   const nav=`<div class="rp-nav"><button class="btn sm ghost" id="rpPrev" aria-label="Önceki">‹</button><h2>${periodLabel(keys)}</h2><button class="btn sm ghost" id="rpNext" aria-label="Sonraki">›</button></div>${isNow?"":`<button class="linkbtn small" id="rpToday" style="align-self:center">Bugüne dön</button>`}`;
-  if(rp==="day")return seg+nav+vReportDay(A.I[0]);
+  const docBtn=`<button class="btn primary" id="docOpen" style="display:flex;gap:8px;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg>Doktor raporu (PDF)</button>`;
+  if(rp==="day")return docBtn+seg+nav+vReportDay(A.I[0]);
   const legendKcal=`<div class="legend"><span><i style="background:var(--good)"></i>Hedefte</span><span><i style="background:var(--bad)"></i>Aştın</span><span><i style="background:var(--warn)"></i>Çok az</span><span>- - Hedef</span></div>`;
   const legendQ=`<div class="legend"><span><i style="background:var(--good)"></i>Yiyebilirsin</span><span><i style="background:var(--warn)"></i>Dikkatli ye</span><span><i style="background:var(--bad)"></i>Uzak dur</span></div>`;
   let kc,qc,meds,wc;
@@ -1306,7 +1307,7 @@ function vReport(){
   const missedList=A.missed.length?`<div class="notice" style="background:var(--bad-soft);margin-top:10px"><b style="color:var(--bad)">Atlanan günler (${A.missed.length})</b><br>${A.missed.slice(0,rp==="year"?20:31).map(i=>fmtD(i.k)).join("<br>")}${A.missed.length>20&&rp==="year"?"<br>…":""}</div>`:(A.taken.length?`<div class="notice" style="background:var(--good-soft);margin-top:10px">Bu dönemde hiç atlamadın.</div>`:"");
   const rank=(L,empty)=>L.length?`<div class="rank">${L.slice(0,8).map(f=>`<div><span>${esc(f.n)}</span><span>${f.c} kez · ${r0(f.k)} kcal</span></div>`).join("")}</div>`:`<p class="small muted" style="margin:6px 0 0">${empty}</p>`;
   const adh=A.taken.length+A.missed.length?Math.round(A.taken.length/(A.taken.length+A.missed.length)*100):null;
-  return seg+nav+`
+  return docBtn+seg+nav+`
   <section class="card"><p class="summary">${summaryText(A,keys)}</p></section>
   <div class="tiles">
     <div class="tile"><b>${A.n?r0(A.avg):"–"}</b><span>ort. kcal / gün</span></div>
@@ -1347,6 +1348,180 @@ function vReportDay(i){
       return `<div class="meal"><div class="mh"><span class="label">${ml}</span><span class="small muted num">${r0(es.reduce((a,e)=>a+e.k,0))} kcal</span></div>${es.map(e=>{const sd=stOf(e);return `<div class="entry ${ST[sd][0]}"><div class="n"><span class="nm">${esc(e.n)}</span>${sd!=="ok"?`<span class="tag">${ST[sd][1]}</span>`:""}<small>${e.g} g · P ${r1(e.p)} · Y ${r1(e.f)} · K ${r1(e.c)}</small></div><span class="k">${r0(e.k)}</span></div>`}).join("")}</div>`}).join("")}</div></section>
   <section class="card" style="display:flex;flex-direction:column;gap:10px"><h2>Protein, yağ, karbonhidrat</h2>
     ${macro("Protein","var(--prot)",i.t.p,T.p,"g")}${macro("Yağ","var(--fat)",i.t.f,T.f,"g")}${macro("Karbonhidrat","var(--carb)",i.t.c,T.c,"g")}</section>`;
+}
+/* ---------- Doktor raporu (PDF) ---------- */
+const foodOf=e=>allFoods().find(f=>f.n===e.n)||null;
+const tsOf=e=>{const t=parseInt(e.id,36);return t>1.6e12&&t<2.5e12?t:null};
+function keysBetween(a,b){const out=[];for(const d=parseKey(a);keyOf(d)<=b;d.setDate(d.getDate()+1))out.push(keyOf(d));return out}
+function tagsOf(e){const f=foodOf(e),w=trLower((f&&f.why)||""),n=e.n;
+  return{gluten:/(glutenli|gluten icer|\(gluten\)|gluten ve|gluten,|ve gluten|gluten de )/.test(w),soy:/soya/.test(w)||/soya|tofu|edamame/i.test(n),
+    iodine:/iyot/.test(w)&&n!=="İyotlu tuz",alcohol:!!(f&&f.cat==="alkol"),lag:f?lagOf(f):30}}
+const mmToHM=m=>pad(Math.floor(m/60))+":"+pad(Math.round(m%60));
+function doctorData(a,b){
+  const keys=keysBetween(a,b),A=agg(keys),st=S.settings,plan=toMin(st.medTime);
+  // ilaç saatleri
+  const times=A.taken.map(i=>toMin(i.medAt));const mt={n:times.length};
+  if(times.length){mt.avg=times.reduce((x,y)=>x+y,0)/times.length;mt.sd=Math.sqrt(times.reduce((x,y)=>x+(y-mt.avg)**2,0)/times.length);
+    mt.min=Math.min(...times);mt.max=Math.max(...times);mt.late=times.filter(t=>t>plan+60).length;mt.early=times.filter(t=>t<plan-60).length}
+  // ilaç–yiyecek arası süre (kayıt saatine göre)
+  const inter=[];A.I.forEach(i=>{if(!i.medAt||!i.has)return;const m=toMin(i.medAt),dayStart=parseKey(i.k).getTime();
+    const bad=i.entries.filter(e=>{const t=tsOf(e);if(!t||t<dayStart||t>dayStart+864e5)return false;const em=(t-dayStart)/6e4;return em>=m&&em<m+tagsOf(e).lag});
+    if(bad.length)inter.push({k:i.k,items:[...new Set(bad.map(e=>e.n))]})});
+  // bayraklar
+  const fl={gluten:new Set(),soy:new Set(),iodine:new Set(),alcohol:new Set()},alc={n:0,kcal:0},flNames={gluten:{},soy:{},iodine:{},alcohol:{}};
+  A.L.forEach(i=>i.entries.forEach(e=>{const t=tagsOf(e);["gluten","soy","iodine","alcohol"].forEach(x=>{if(t[x]){fl[x].add(i.k);flNames[x][e.n]=(flNames[x][e.n]||0)+1}});if(t.alcohol){alc.n++;alc.kcal+=e.k}}));
+  const topNames=o=>Object.entries(o).sort((x,y)=>y[1]-x[1]).slice(0,4).map(x=>x[0]);
+  // haftalık
+  const weeks=[];keys.forEach(k=>{const d=parseKey(k);d.setDate(d.getDate()-((d.getDay()+6)%7));const wk=keyOf(d);let w=weeks.find(x=>x.wk===wk);if(!w)weeks.push(w={wk,keys:[]});w.keys.push(k)});
+  weeks.forEach(w=>{const I=A.I.filter(i=>w.keys.includes(i.k)),L=I.filter(i=>i.has),Wt=I.filter(i=>i.w);
+    w.from=w.keys[0];w.to=w.keys[w.keys.length-1];w.n=L.length;w.avg=L.length?L.reduce((x,i)=>x+i.t.k,0)/L.length:null;
+    w.tar=L.length?L.reduce((x,i)=>x+i.tar,0)/L.length:null;w.taken=I.filter(i=>i.med==="taken").length;w.missed=I.filter(i=>i.med==="missed").length;
+    w.harm=L.reduce((x,i)=>x+i.entries.filter(e=>stOf(e)==="no").length,0);w.w=Wt.length?Wt.reduce((x,i)=>x+i.w,0)/Wt.length:null});
+  const T=targetFor(b),n=Math.max(1,A.n),kcalP=A.p*4,kcalF=A.f*9,kcalC=A.c*4,kt=kcalP+kcalF+kcalC||1;
+  const days=keys.length,spanW=A.wN>1?(parseKey(A.W[A.W.length-1].k)-parseKey(A.W[0].k))/864e5/7:0;
+  return{keys,A,st,plan,mt,inter,fl,flNames,topNames,alc,weeks,T,days,
+    mac:{p:A.p/n,f:A.f/n,c:A.c/n,pp:kcalP/kt*100,fp:kcalF/kt*100,cp:kcalC/kt*100},
+    rate:spanW>=1?(A.w1-A.W[0].w)/spanW:null,
+    bmi:st.heightCm&&A.wN?A.w1/((st.heightCm/100)**2):null,
+    adh:A.taken.length+A.missed.length?A.taken.length/(A.taken.length+A.missed.length)*100:null,
+    logPct:days?A.n/A.I.filter(i=>i.med!=="future"&&i.med!=="none").length*100:0}
+}
+function evaluate(D){
+  const A=D.A,o=[],q=[];const push=(lvl,t)=>o.push({lvl,t});
+  if(D.logPct<70)push("info",`Dönemin %${Math.round(D.logPct)}'inde yiyecek kaydı var. Kayıt olmayan günler değerlendirmeye girmedi; sonuçlar eksik olabilir.`);
+  if(D.adh!==null){if(D.adh<90)push("warn",`İlaç uyumu %${Math.round(D.adh)}. ${A.missed.length} gün ilaç alınmadı olarak görünüyor. Atlanan dozlar tiroid değerlerini etkileyebilir.`);else push("good",`İlaç uyumu %${Math.round(D.adh)}; düzenli kullanılıyor.`);
+    if(A.missed.length)q.push("Bir dozu unuttuğumda ne yapmalıyım, ertesi gün iki doz almalı mıyım?")}
+  if(D.mt.n>=3){if(D.mt.sd>45)push("warn",`İlaç alma saati değişken: ortalama ${mmToHM(D.mt.avg)}, sapma yaklaşık ±${Math.round(D.mt.sd)} dk (en erken ${mmToHM(D.mt.min)}, en geç ${mmToHM(D.mt.max)}).`);
+    else push("good",`İlaç her gün benzer saatte alınıyor (ortalama ${mmToHM(D.mt.avg)}, ±${Math.round(D.mt.sd)} dk).`)}
+  if(D.inter.length)push("warn",`${D.inter.length} gün, ilaçtan sonra önerilen bekleme süresi dolmadan yiyecek/içecek kaydı var (ör. ${[...new Set(D.inter.flatMap(x=>x.items))].slice(0,4).join(", ")}). Süt ürünleri, kahve, soya ve lifli besinler emilimi azaltabilir. Not: kayıt saatine göre hesaplandı.`);
+  if(A.n){const r=A.avg/A.avgTar;
+    if(r<0.7)push("warn",`Ortalama alım hedefin %${Math.round(r*100)}'ü (${r0(A.avg)} / ${r0(A.avgTar)} kcal). Uzun süreli düşük alım halsizliğe ve metabolizmanın yavaşlamasına yol açabilir; bazı öğünler kaydedilmemiş de olabilir.`);
+    else if(r>1.1)push("warn",`Ortalama alım hedefin %${Math.round(r*100)}'ü (${r0(A.avg)} / ${r0(A.avgTar)} kcal); günde ortalama ${r0(A.avg-A.avgTar)} kcal fazla.`);
+    else push("good",`Ortalama kalori alımı hedefe yakın (${r0(A.avg)} / ${r0(A.avgTar)} kcal).`)}
+  if(D.rate!==null){if(D.rate<-1)push("warn",`Kilo kaybı hızlı: haftada ortalama ${fmtKg(-D.rate)} kg. Genelde haftada 0,5–1 kg önerilir.`);
+    else if(D.rate>0.5)push("warn",`Kilo artışı: haftada ortalama ${fmtKg(D.rate)} kg.`);
+    else push("good",`Kilo değişimi haftada ${fmtDiff(D.rate)} kg; kontrollü bir hız.`)}
+  if(D.bmi)push("info",`Vücut kitle indeksi (son ölçüm): ${D.bmi.toFixed(1).replace(".",",")} (${D.bmi<18.5?"zayıf":D.bmi<25?"normal":D.bmi<30?"fazla kilolu":"obez"}).`);
+  if(A.n&&A.wN){const pk=D.mac.p/A.w1;if(pk<0.8)push("warn",`Protein alımı düşük: kilo başına günde ${pk.toFixed(2).replace(".",",")} g (genel öneri en az 0,8 g/kg).`)}
+  const hp=A.pct("no");if(A.n&&hp>=15)push("warn",`Kalorinin %${hp}'i “uzak durulması önerilen” yiyeceklerden geldi (${A.harm.slice(0,4).map(f=>f.n).join(", ")}).`);
+  else if(A.n&&!A.harmCount)push("good","“Uzak durulması önerilen” listeden yiyecek tüketilmedi.");
+  if(D.fl.alcohol.size)push("warn",`${D.fl.alcohol.size} gün alkol tüketildi; toplam ${D.alc.n} kez, ${r0(D.alc.kcal)} kcal.`);
+  if(D.fl.gluten.size)push("info",`${D.fl.gluten.size} gün glüten içeren yiyecek tüketildi (${D.topNames(D.flNames.gluten).join(", ")}).`);
+  if(D.fl.soy.size)push("info",`${D.fl.soy.size} gün soya ürünü tüketildi.`);
+  if(D.fl.iodine.size)push("info",`${D.fl.iodine.size} gün iyot içeriği yüksek yiyecek tüketildi (${D.topNames(D.flNames.iodine).join(", ")}).`);
+  q.push("Son TSH, sT4 ve anti-TPO sonuçlarıma göre ilaç dozum uygun mu?");
+  if(D.fl.gluten.size)q.push("Çölyak testi yaptırmam gerekir mi, glütensiz beslenmem fayda sağlar mı?");
+  q.push("D vitamini, selenyum, B12, demir ve ferritin değerlerime baktırmalı mıyım?");
+  return{o,q}
+}
+function doctorHTML(a,b,notes){
+  const D=doctorData(a,b),A=D.A,st=D.st,E=evaluate(D);
+  const fix=svg=>svg.replace(/<svg ([^>]*?)width="[^"]*"/,'<svg $1width="100%"').replace("max-width:none","max-width:100%");
+  const long=D.keys.length>62;
+  let kc;if(long)kc=barChart(D.weeks.map(w=>({label:fmtShort(w.from).replace(/\s.*/,""),v:w.avg||0,tar:w.tar||0,cls:!w.avg?"none":w.avg>w.tar*1.05?"over":w.avg<w.tar*.8?"under":"ok"})));
+  else kc=barChart(A.I.map((i,x)=>({label:D.keys.length<=14||x%Math.ceil(D.keys.length/12)===0?String(parseKey(i.k).getDate()):"",v:i.t.k,tar:i.has?i.tar:0,cls:i.bal||"none"})));
+  const wc=A.wN>1?lineChart(long?D.weeks.map(w=>({label:fmtShort(w.from).replace(/\s.*/,""),v:w.w})):A.I.map((i,x)=>({label:D.keys.length<=14||x%Math.ceil(D.keys.length/12)===0?String(parseKey(i.k).getDate()):"",v:i.w})),st.goalW?+st.goalW:null):"";
+  const row=(l,v)=>`<tr><th>${l}</th><td>${v}</td></tr>`;
+  const icon={good:"✓",warn:"!",info:"i"};
+  const css=`:root{--bg:#fff;--surface:#fff;--sunk:#EEF2EF;--ink:#17231F;--muted:#5C6C66;--line:#D5DED9;--accent:#2B6A5E;--good:#2F7D4A;--warn:#A86A06;--bad:#B23A31;--good-soft:#DCEFE2;--warn-soft:#F7EACD;--bad-soft:#F6DDDA}
+  @page{size:A4;margin:14mm 13mm}*{box-sizing:border-box}body{font-family:"Segoe UI",Roboto,"Noto Sans",Arial,sans-serif;color:var(--ink);font-size:10.5pt;line-height:1.45;margin:0;background:#fff}
+  h1{font-size:18pt;margin:0;color:var(--accent);letter-spacing:-.01em}h2{font-size:12.5pt;margin:0 0 6px;padding-bottom:4px;border-bottom:1.5px solid var(--accent);color:var(--accent)}
+  h2{break-after:avoid;page-break-after:avoid}thead{display:table-header-group}tr{break-inside:avoid;page-break-inside:avoid}
+  .hdr{display:flex;justify-content:space-between;gap:16px;align-items:flex-end;border-bottom:3px solid var(--accent);padding-bottom:8px;margin-bottom:12px}
+  .hdr .r{text-align:right;font-size:9.5pt;color:var(--muted)}
+  section{margin:0 0 14px;break-inside:avoid;page-break-inside:avoid}.big{break-inside:auto;page-break-inside:auto}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px}.kpi{border:1px solid var(--line);border-radius:6px;padding:6px 8px}
+  .kpi b{display:block;font-size:14pt;font-variant-numeric:tabular-nums}.kpi span{font-size:8.5pt;color:var(--muted)}
+  .kpi.bad b{color:var(--bad)}.kpi.good b{color:var(--good)}.kpi.warn b{color:var(--warn)}
+  table{width:100%;border-collapse:collapse;font-size:9.5pt;font-variant-numeric:tabular-nums}th,td{text-align:left;padding:4px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+  thead th{background:var(--sunk);font-size:8.5pt;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+  .kv th{width:42%;font-weight:600;color:var(--muted)}.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .ev{list-style:none;padding:0;margin:0}.ev li{display:flex;gap:8px;padding:5px 0;border-bottom:1px solid var(--line)}
+  .ev i{flex:none;width:18px;height:18px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-weight:700;font-size:9pt;color:#fff}
+  .ev .good i{background:var(--good)}.ev .warn i{background:var(--warn)}.ev .info i{background:var(--muted)}
+  .chartbox svg{width:100%;height:auto}.lg{font-size:8.5pt;color:var(--muted)}.lg i{display:inline-block;width:9px;height:9px;border-radius:2px;margin:0 4px 0 10px;vertical-align:-1px}
+  .miss{color:var(--bad);font-weight:600}.note{border:1px dashed var(--line);border-radius:6px;padding:8px;white-space:pre-wrap;min-height:40px}
+  .foot{margin-top:16px;font-size:8.5pt;color:var(--muted);border-top:1px solid var(--line);padding-top:6px}
+  .over{color:var(--bad)}.under{color:var(--warn)}.ok{color:var(--good)}`;
+  const pct=x=>x===null?"–":"%"+Math.round(x);
+  const daily=!long&&A.I.length?`<section class="big"><h2>Günlük kayıtlar</h2><table><thead><tr><th>Tarih</th><th>Kalori</th><th>Hedef</th><th>İlaç</th><th>Kilo</th><th>Uzak durulması önerilenler</th></tr></thead><tbody>
+    ${A.I.filter(i=>i.med!=="future").map(i=>`<tr><td>${parseKey(i.k).toLocaleDateString("tr-TR",{day:"2-digit",month:"2-digit",weekday:"short"})}</td><td class="${i.bal||""}">${i.has?r0(i.t.k):"–"}</td><td>${i.has?i.tar:"–"}</td><td class="${i.med==="missed"?"miss":""}">${i.medAt||(i.med==="missed"?"Alınmadı":"–")}</td><td>${i.w?fmtKg(i.w):"–"}</td><td>${esc([...new Set(i.entries.filter(e=>stOf(e)==="no").map(e=>e.n))].join(", "))||""}</td></tr>`).join("")}</tbody></table></section>`:"";
+  return `<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Tiroid Defterim raporu ${a} – ${b}</title><style>${css}</style></head><body>
+  <div class="hdr"><div><h1>Beslenme, ilaç ve kilo raporu</h1><div>${st.reportName?`<b>${esc(st.reportName)}</b> · `:""}Haşimato tiroiditi takibi</div></div>
+    <div class="r"><b>${fmtD(a).replace(/ [A-ZÇĞİÖŞÜa-zçğıöşü]+$/,"")} – ${fmtD(b).replace(/ [A-ZÇĞİÖŞÜa-zçğıöşü]+$/,"")}</b><br>${D.keys.length} gün · Oluşturma: ${new Date().toLocaleDateString("tr-TR")}<br>İlaç: ${esc(st.medName)}, plan ${st.medTime}</div></div>
+  <div class="kpis">
+    <div class="kpi ${D.adh===null?"":D.adh>=90?"good":"bad"}"><b>${pct(D.adh)}</b><span>ilaç uyumu (${A.taken.length} alındı / ${A.missed.length} atlandı)</span></div>
+    <div class="kpi ${A.wN?(A.wDelta<-0.05?"good":A.wDelta>0.05?"bad":""):""}"><b>${A.wN?fmtDiff(A.wDelta)+" kg":"–"}</b><span>kilo değişimi${A.wN?` (${fmtKg(A.wBase)} → ${fmtKg(A.w1)})`:""}</span></div>
+    <div class="kpi"><b>${A.n?r0(A.avg):"–"}</b><span>ort. kcal/gün (hedef ${r0(A.avgTar)})</span></div>
+    <div class="kpi ${A.harmCount?"bad":"good"}"><b>${A.harmCount}</b><span>kez “uzak dur” grubundan</span></div></div>
+  <section><h2>Değerlendirme</h2><ul class="ev">${E.o.map(x=>`<li class="${x.lvl}"><i>${icon[x.lvl]}</i><span>${esc(x.t)}</span></li>`).join("")||"<li>Değerlendirme için yeterli kayıt yok.</li>"}</ul>
+    <p class="lg" style="margin:6px 0 0">Bu bölüm kayıtlardan uygulama tarafından otomatik hazırlanmıştır; tıbbi yorum veya tanı değildir.</p></section>
+  <div class="two">
+  <section><h2>İlaç takibi</h2><table class="kv">${row("İlaç / plan saati",`${esc(st.medName)} · ${st.medTime}`)}${row("Alınan gün",A.taken.length)}${row("Atlanan gün",`<span class="${A.missed.length?"miss":""}">${A.missed.length}</span>`)}
+    ${D.mt.n?row("Ortalama alma saati",mmToHM(D.mt.avg))+row("En erken / en geç",mmToHM(D.mt.min)+" / "+mmToHM(D.mt.max))+row("Saat sapması","±"+Math.round(D.mt.sd)+" dk")+row("Plandan 1 saat+ geç",D.mt.late+" gün"):""}
+    ${row("Bekleme süresi dolmadan yiyecek",D.inter.length+" gün")}</table>
+    ${A.missed.length?`<p style="margin:6px 0 0;font-size:9pt"><b class="miss">Atlanan günler:</b> ${A.missed.map(i=>parseKey(i.k).toLocaleDateString("tr-TR",{day:"numeric",month:"short"})).join(", ")}</p>`:""}</section>
+  <section><h2>Kilo</h2><table class="kv">${A.wN?row("Başlangıç → son",`${fmtKg(A.wBase)} → ${fmtKg(A.w1)} kg`)+row("Değişim",fmtDiff(A.wDelta)+" kg")+row("Haftalık hız",D.rate===null?"–":fmtDiff(D.rate)+" kg/hafta")+row("En düşük / en yüksek",fmtKg(A.wMin)+" / "+fmtKg(A.wMax)+" kg")+row("Ölçüm günü",A.wN)+(st.goalW?row("Hedef kilo",fmtKg(+st.goalW)+" kg"):"")+(D.bmi?row("VKİ (son)",D.bmi.toFixed(1).replace(".",",")):""):row("Ölçüm","Bu dönemde yok")}</table></section>
+  </div>
+  ${wc?`<section><h2>Kilo grafiği</h2>${fix(wc)}</section>`:""}
+  <section><h2>Kalori dengesi</h2>${fix(kc)}<div class="lg"><i style="background:var(--good)"></i>Hedefte<i style="background:var(--bad)"></i>Aşım<i style="background:var(--warn)"></i>Çok az<span style="margin-left:10px">- - hedef</span>${long?" · haftalık ortalamalar":""}</div>
+    <div class="two" style="margin-top:8px"><table class="kv">${row("Kayıtlı gün",`${A.n} / ${D.keys.length}`)}${row("Günlük kalori hedefi",st.kcal+" kcal")}${row("Ortalama alım",A.n?r0(A.avg)+" kcal":"–")}${row("Hedefte / aşım / çok az",`${A.ok} / ${A.over} / ${A.under} gün`)}${row("Toplam fark",(A.sum>A.tar?"+":"")+r0(A.sum-A.tar).toLocaleString("tr-TR")+" kcal")}</table>
+    <table class="kv">${row("Protein",`${r0(D.mac.p)} g/gün (hedef ${r0(D.T.p)}) · %${r0(D.mac.pp)} enerji`)}${row("Yağ",`${r0(D.mac.f)} g/gün (hedef ${r0(D.T.f)}) · %${r0(D.mac.fp)}`)}${row("Karbonhidrat",`${r0(D.mac.c)} g/gün (hedef ${r0(D.T.c)}) · %${r0(D.mac.cp)}`)}${A.wN&&A.n?row("Protein / kg",(D.mac.p/A.w1).toFixed(2).replace(".",",")+" g/kg"):""}</table></div></section>
+  <section><h2>Beslenme kalitesi</h2><table class="kv">${row("Kalorinin kaynağı",`Uygun %${A.pct("ok")} · Dikkatli %${A.pct("care")} · Uzak dur %${A.pct("no")}`)}
+    ${row("“Uzak dur” grubundan",A.harm.length?A.harm.slice(0,6).map(f=>`${esc(f.n)} (${f.c})`).join(", "):"Yok")}
+    ${row("Alkol",D.fl.alcohol.size?`${D.fl.alcohol.size} gün · ${D.alc.n} kez · ${r0(D.alc.kcal)} kcal`:"Yok")}
+    ${row("Glüten içeren",D.fl.gluten.size?`${D.fl.gluten.size} gün (${D.topNames(D.flNames.gluten).map(esc).join(", ")})`:"Yok")}
+    ${row("Soya ürünleri",D.fl.soy.size?`${D.fl.soy.size} gün`:"Yok")}
+    ${row("İyot içeriği yüksek",D.fl.iodine.size?`${D.fl.iodine.size} gün (${D.topNames(D.flNames.iodine).map(esc).join(", ")})`:"Yok")}
+    ${row("En çok kalori",A.top.slice(0,5).map(f=>`${esc(f.n)} (${r0(f.k)} kcal)`).join(", ")||"–")}</table></section>
+  <section class="big"><h2>Haftalık özet</h2><table><thead><tr><th>Hafta</th><th>Kayıt</th><th>Ort. kcal</th><th>İlaç</th><th>Ort. kilo</th><th>Uzak dur</th></tr></thead><tbody>
+    ${D.weeks.map(w=>`<tr><td>${fmtShort(w.from)} – ${fmtShort(w.to)}</td><td>${w.n}/${w.keys.length}</td><td class="${w.avg===null?"":w.avg>w.tar*1.05?"over":w.avg<w.tar*.8?"under":"ok"}">${w.avg===null?"–":r0(w.avg)}</td><td class="${w.missed?"miss":""}">${w.taken}/${w.taken+w.missed}</td><td>${w.w?fmtKg(w.w):"–"}</td><td>${w.harm||"–"}</td></tr>`).join("")}</tbody></table></section>
+  ${notes?`<section><h2>Hastanın notları</h2><div class="note">${esc(notes)}</div></section>`:""}
+  <section><h2>Doktora sorulabilecekler</h2><ul style="margin:0;padding-left:18px">${E.q.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></section>
+  ${daily}
+  <div class="foot">Tiroid Defterim ile oluşturuldu. Veriler kişinin kendi girdiği kayıtlardır; kalori ve besin değerleri yaklaşıktır. İlaç-yiyecek arası süreler kayıt saatine göre hesaplanmıştır. Tıbbi karar için hekim değerlendirmesi esastır.</div>
+  </body></html>`;
+}
+let docRange=null;
+function openDoctor(){
+  const st=S.settings,today=todayKey(),d=new Date();d.setDate(d.getDate()-29);
+  docRange=docRange||{a:keyOf(d),b:today};
+  const sc=document.createElement("div");sc.className="scrim";
+  sc.innerHTML=`<div class="sheet" role="dialog" aria-modal="true" aria-label="Doktor raporu">
+   <h2 style="font-size:18px">Doktor raporu (PDF)</h2>
+   <p class="small muted" style="margin:0">Seçtiğin tarih aralığındaki ilaç takibi, kilo değişimi, kalori dengesi ve beslenme kalitesi tek bir raporda toplanır.</p>
+   <div class="chips">${[["7","Son 7 gün"],["30","Son 30 gün"],["90","Son 3 ay"],["m","Bu ay"],["pm","Geçen ay"]].map(([k,l])=>`<button class="chip" data-dr="${k}">${l}</button>`).join("")}</div>
+   <div class="row"><div class="field"><label for="dA">Başlangıç</label><input id="dA" type="date" value="${docRange.a}" max="${today}"></div><div class="field"><label for="dB">Bitiş</label><input id="dB" type="date" value="${docRange.b}" max="${today}"></div></div>
+   <div class="row"><div class="field"><label for="dN">Ad soyad (isteğe bağlı)</label><input id="dN" value="${esc(st.reportName||"")}"></div><div class="field"><label for="dH">Boy cm (VKİ için)</label><input id="dH" type="number" inputmode="numeric" value="${st.heightCm||""}"></div></div>
+   <div class="field"><label for="dT">Doktora notların (belirtiler, sorular)</label><textarea id="dT" rows="3" style="width:100%;border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:10px;font-size:15px;font-family:inherit" placeholder="Son haftalarda yorgunluk ve saç dökülmesi arttı…">${esc(st.reportNotes||"")}</textarea></div>
+   <div class="small" id="dErr" style="color:var(--bad)"></div>
+   <div class="row"><button class="btn ghost" id="dCancel">Vazgeç</button><button class="btn primary" id="dGo">Raporu oluştur</button></div></div>`;
+  document.body.appendChild(sc);
+  sc.addEventListener("click",e=>{const b=e.target.closest("button");if(e.target===sc||(b&&b.id==="dCancel")){sc.remove();return}if(!b)return;
+    if(b.dataset.dr){const t=new Date(),s=new Date();let a,bb=keyOf(t);
+      if(b.dataset.dr==="m"){s.setDate(1);a=keyOf(s)}else if(b.dataset.dr==="pm"){const f=new Date(t.getFullYear(),t.getMonth()-1,1),l=new Date(t.getFullYear(),t.getMonth(),0);a=keyOf(f);bb=keyOf(l)}
+      else{s.setDate(s.getDate()-(+b.dataset.dr-1));a=keyOf(s)}
+      $("#dA").value=a;$("#dB").value=bb;sc.querySelectorAll("[data-dr]").forEach(x=>x.setAttribute("aria-pressed",x===b))}
+    if(b.id==="dGo"){const a=$("#dA").value,bb=$("#dB").value;
+      if(!a||!bb||a>bb){$("#dErr").textContent="Başlangıç tarihi bitişten önce olmalı.";return}
+      if(keysBetween(a,bb).length>400){$("#dErr").textContent="En fazla 400 günlük bir aralık seçebilirsin.";return}
+      st.reportName=$("#dN").value.trim();const h=+$("#dH").value;st.heightCm=h>=120&&h<=230?h:null;st.reportNotes=$("#dT").value;saveSettings();
+      docRange={a,b:bb};sc.remove();showDoctor(a,bb)}
+  });
+}
+function showDoctor(a,b){
+  const html=doctorHTML(a,b,S.settings.reportNotes||"");const name=`Tiroid-raporu-${a}_${b}`;
+  const can=window.Android&&Android.printHtml;
+  const o=document.createElement("div");o.className="onb";o.style.display="flex";o.style.flexDirection="column";
+  o.innerHTML=`<div style="display:flex;gap:8px;align-items:center;padding:calc(10px + env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) 10px max(12px,env(safe-area-inset-left,0px));border-bottom:1px solid var(--line);background:var(--surface)">
+    <button class="btn ghost sm" id="pvClose">‹ Geri</button><b style="flex:1;text-align:center;font-size:14px">Rapor önizleme</b>
+    <button class="btn primary sm" id="pvPdf">${can?"PDF / Yazdır":"PDF"}</button></div>
+    ${can?"":`<div class="notice warn" style="margin:10px">PDF olarak kaydetmek için raporu telefondaki Tiroid Defterim uygulamasından oluştur. Uygulamada “PDF / Yazdır” düğmesi Android'in “PDF olarak kaydet” ekranını açar.</div>`}
+    <iframe title="Rapor önizleme" style="flex:1;border:0;background:#fff;width:100%"></iframe>`;
+  document.body.appendChild(o);o.querySelector("iframe").srcdoc=html;
+  o.addEventListener("click",e=>{const bt=e.target.closest("button");if(!bt)return;
+    if(bt.id==="pvClose")o.remove();
+    if(bt.id==="pvPdf"){if(can){try{Android.printHtml(html,name)}catch(err){toast("PDF açılamadı")}}else toast("PDF için telefondaki uygulamayı kullan")}});
 }
 /* ---------- Yemek yap / Yemeklerim ---------- */
 let draft=null, openRecipe=null, rq="";
@@ -1492,6 +1667,7 @@ $("#view").addEventListener("click",e=>{const b=e.target.closest("button");if(!b
     if(rp==="day")d.setDate(d.getDate()+s);else if(rp==="week")d.setDate(d.getDate()+7*s);else if(rp==="month"){d.setDate(1);d.setMonth(d.getMonth()+s)}else d.setFullYear(d.getFullYear()+s);
     rAnchor=d;render()}
   else if(b.id==="rpToday"){rAnchor=new Date();render()}
+  else if(b.id==="docOpen"){openDoctor()}
   else if(b.dataset.delc){S.settings.custom.splice(+b.dataset.delc,1);saveSettings();render()}
   else if(b.id==="bkCopy"){const t=JSON.stringify({app:"tiroid-defterim",v:1,settings:S.settings,days:S.days});$("#bkText").value=t;
     let ok=false;try{if(window.Android&&Android.copy){Android.copy(t);ok=true}}catch(e){}
