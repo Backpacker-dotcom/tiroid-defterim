@@ -1,7 +1,8 @@
 <!doctype html>
 <html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <style>body{margin:0}[hidden]{display:none!important}img{max-width:100%}</style></head><body>
-<title>Tiroid Defterim</title>
+<title>FlutterThyro</title>
+<!-- Tiroid Defterim -->
 <meta name="claude:viewport-fit-sides" content="cover">
 <meta name="theme-color" content="#2B6A5E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -236,8 +237,8 @@ nav.tabs button[aria-current="page"]{color:var(--accent);background:var(--accent
 
 <div class="app">
   <header class="top">
-    <svg class="logo" viewBox="0 0 32 32" aria-hidden="true"><path fill="var(--accent)" d="M16 9c-2-4-7-6-10-4s-3 9 0 13 7 5 9 3c1-1 1-3 1-4 0 1 0 3 1 4 2 2 6 1 9-3s3-11 0-13-8 0-10 4z"/><rect x="15" y="7" width="2" height="16" rx="1" fill="var(--accent-ink)" opacity=".7"/></svg>
-    <h1>Tiroid Defterim</h1>
+    <svg class="logo" viewBox="0 0 32 32" aria-hidden="true"><g fill="var(--accent)"><path d="M16.6 15.2C18 9.6 22.4 4.6 27.2 4.9 30.6 5.1 31.2 9.4 28.6 12.6 26.3 15.4 21.2 16.3 16.6 15.2Z"/><path d="M16.6 16.6C20.6 16.5 24.6 18 25.6 21.4 26.4 24.3 24.1 27.3 21.4 26.1 18.6 24.9 17 20.6 16.6 16.6Z" opacity=".6"/><g transform="matrix(-1 0 0 1 32 0)"><path d="M16.6 15.2C18 9.6 22.4 4.6 27.2 4.9 30.6 5.1 31.2 9.4 28.6 12.6 26.3 15.4 21.2 16.3 16.6 15.2Z"/><path d="M16.6 16.6C20.6 16.5 24.6 18 25.6 21.4 26.4 24.3 24.1 27.3 21.4 26.1 18.6 24.9 17 20.6 16.6 16.6Z" opacity=".6"/></g></g><rect x="15.15" y="10.2" width="1.7" height="15.4" rx=".85" fill="var(--ink)"/><path d="M15.7 10.6C15.2 8.4 14 6.6 12.4 5.6M16.3 10.6C16.8 8.4 18 6.6 19.6 5.6" stroke="var(--ink)" stroke-width=".9" fill="none" stroke-linecap="round"/></svg>
+    <h1>FlutterThyro</h1>
     <div class="date"><div id="hdrDate"></div><div class="sync" id="sync">Bu cihazda kayıtlı</div></div>
   </header>
   <main id="view" class="view"></main>
@@ -1052,7 +1053,7 @@ function vSettings(){
   <label style="display:flex;gap:10px;align-items:center"><input id="sWOn" type="checkbox" ${st.weightOn?"checked":""} style="width:20px;height:20px"><span>Her gün kilo ölçümü hatırlat</span></label>
   <div class="row"><div class="field"><label for="sWT">Saat</label><input id="sWT" type="time" value="${st.weightTime||"08:50"}"></div>
   <div class="field"><label for="sGoal">Hedef kilo (isteğe bağlı)</label><input id="sGoal" type="text" inputmode="decimal" placeholder="örn. 68" value="${st.goalW?fmtKg(st.goalW):""}"></div></div>
-  ${window.Android&&!Android.setWeightReminder?`<div class="notice warn">Kilo bildiriminin gelmesi için uygulamanın yeni sürümünü kurman gerekiyor: github.com/Backpacker-dotcom/tiroid-defterim/releases/latest/download/TiroidDefterim.apk</div>`:window.Android?`<div class="small muted">Her gün bu saatte “Kilo ölçümü” bildirimi gelir; dokununca kilo kutusu açılır.</div>`:""}
+  ${window.Android&&!Android.setWeightReminder?`<div class="notice warn">Kilo bildiriminin gelmesi için uygulamanın yeni sürümünü kurman gerekiyor: github.com/Backpacker-dotcom/tiroid-defterim/releases/latest/download/FlutterThyro.apk</div>`:window.Android?`<div class="small muted">Her gün bu saatte “Kilo ölçümü” bildirimi gelir; dokununca kilo kutusu açılır.</div>`:""}
   <div class="small muted">En doğru sonuç için her gün aynı saatte, tuvaletten sonra, kahvaltıdan önce ve benzer kıyafetle tartıl.</div>
   </section>
   <button class="btn primary" id="saveSet">Kaydet</button>
@@ -1124,8 +1125,8 @@ function showOnboarding(){
   const st=S.settings;const o=document.createElement("div");o.className="onb";o.setAttribute("role","dialog");o.setAttribute("aria-label","Hoş geldin");
   let sex="k",act=1.375;
   o.innerHTML=`<div class="in">
-  <svg class="logo" style="width:46px;height:46px" viewBox="0 0 32 32" aria-hidden="true"><path fill="var(--accent)" d="M16 9c-2-4-7-6-10-4s-3 9 0 13 7 5 9 3c1-1 1-3 1-4 0 1 0 3 1 4 2 2 6 1 9-3s3-11 0-13-8 0-10 4z"/></svg>
-  <h1>Tiroid Defterim'e hoş geldin</h1>
+  <svg class="logo" style="width:46px;height:46px" viewBox="0 0 32 32" aria-hidden="true"><g fill="var(--accent)"><path d="M16.6 15.2C18 9.6 22.4 4.6 27.2 4.9 30.6 5.1 31.2 9.4 28.6 12.6 26.3 15.4 21.2 16.3 16.6 15.2Z"/><path d="M16.6 16.6C20.6 16.5 24.6 18 25.6 21.4 26.4 24.3 24.1 27.3 21.4 26.1 18.6 24.9 17 20.6 16.6 16.6Z" opacity=".6"/><g transform="matrix(-1 0 0 1 32 0)"><path d="M16.6 15.2C18 9.6 22.4 4.6 27.2 4.9 30.6 5.1 31.2 9.4 28.6 12.6 26.3 15.4 21.2 16.3 16.6 15.2Z"/><path d="M16.6 16.6C20.6 16.5 24.6 18 25.6 21.4 26.4 24.3 24.1 27.3 21.4 26.1 18.6 24.9 17 20.6 16.6 16.6Z" opacity=".6"/></g></g><rect x="15.15" y="10.2" width="1.7" height="15.4" rx=".85" fill="var(--ink)"/><path d="M15.7 10.6C15.2 8.4 14 6.6 12.4 5.6M16.3 10.6C16.8 8.4 18 6.6 19.6 5.6" stroke="var(--ink)" stroke-width=".9" fill="none" stroke-linecap="round"/></svg>
+  <h1>FlutterThyro'ya hoş geldin</h1>
   <p class="lead">Haşimato'ya uygun yiyecekleri bul, günlük kalorini takip et, ilacını unutma. Önce üç bilgiye ihtiyacım var.</p>
   <section class="card" style="display:flex;flex-direction:column;gap:12px">
     <div class="sh"><span class="stepno">1</span><h2>Günlük kalori ihtiyacın</h2></div>
@@ -1501,7 +1502,7 @@ function doctorHTML(a,b,notes,withDaily){
    <tr><th>En çok kalori</th><td>${A.top.slice(0,5).map(f=>`${esc(f.n)} (${r0(f.k)} kcal)`).join(", ")||"–"}</td></tr>
   </tbody></table></section>
   ${notes?`<section><h2>Hastanın notu</h2><div class="note">${esc(notes)}</div></section>`:""}
-  <div class="foot">Tiroid Defterim ile ${new Date().toLocaleDateString("tr-TR")} tarihinde oluşturuldu. Veriler kişinin kendi kayıtlarıdır; kalori ve besin değerleri yaklaşıktır. “Bu dönemin özeti” kayıtlardan otomatik hazırlanmıştır, tıbbi yorum değildir.</div>
+  <div class="foot">FlutterThyro ile ${new Date().toLocaleDateString("tr-TR")} tarihinde oluşturuldu. Veriler kişinin kendi kayıtlarıdır; kalori ve besin değerleri yaklaşıktır. “Bu dönemin özeti” kayıtlardan otomatik hazırlanmıştır, tıbbi yorum değildir.</div>
   ${daily}</body></html>`;
 }
 let docRange=null;
@@ -1533,13 +1534,13 @@ function openDoctor(){
   });
 }
 function showDoctor(a,b){
-  const html=doctorHTML(a,b,S.settings.reportNotes||"",!!S.settings.reportDaily);const name=`Tiroid-raporu-${a}_${b}`;
+  const html=doctorHTML(a,b,S.settings.reportNotes||"",!!S.settings.reportDaily);const name=`FlutterThyro-rapor-${a}_${b}`;
   const can=window.Android&&Android.printHtml;
   const o=document.createElement("div");o.className="onb";o.style.display="flex";o.style.flexDirection="column";
   o.innerHTML=`<div style="display:flex;gap:8px;align-items:center;padding:calc(10px + env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) 10px max(12px,env(safe-area-inset-left,0px));border-bottom:1px solid var(--line);background:var(--surface)">
     <button class="btn ghost sm" id="pvClose">‹ Geri</button><b style="flex:1;text-align:center;font-size:14px">Rapor önizleme</b>
     <button class="btn primary sm" id="pvPdf">${can?"PDF / Yazdır":"PDF"}</button></div>
-    ${can?"":`<div class="notice warn" style="margin:10px">PDF olarak kaydetmek için raporu telefondaki Tiroid Defterim uygulamasından oluştur. Uygulamada “PDF / Yazdır” düğmesi Android'in “PDF olarak kaydet” ekranını açar.</div>`}
+    ${can?"":`<div class="notice warn" style="margin:10px">PDF olarak kaydetmek için raporu telefondaki FlutterThyro uygulamasından oluştur. Uygulamada “PDF / Yazdır” düğmesi Android'in “PDF olarak kaydet” ekranını açar.</div>`}
     <iframe title="Rapor önizleme" style="flex:1;border:0;background:#fff;width:100%"></iframe>`;
   document.body.appendChild(o);o.querySelector("iframe").srcdoc=html;
   o.addEventListener("click",e=>{const bt=e.target.closest("button");if(!bt)return;
@@ -1696,7 +1697,7 @@ $("#view").addEventListener("click",e=>{const b=e.target.closest("button");if(!b
     let ok=false;try{if(window.Android&&Android.copy){Android.copy(t);ok=true}}catch(e){}
     if(ok)toast("Yedek kopyalandı");else if(navigator.clipboard)navigator.clipboard.writeText(t).then(()=>toast("Yedek kopyalandı"),()=>{$("#bkText").select();toast("Metni seçip kopyala")});else{$("#bkText").select();toast("Metni seçip kopyala")}}
   else if(b.id==="bkLoad"){let v;try{v=JSON.parse($("#bkText").value)}catch(e){}
-    if(!v||v.app!=="tiroid-defterim"||!v.days){$("#bkMsg").style.color="var(--bad)";$("#bkMsg").textContent="Bu metin bir Tiroid Defterim yedeği değil. Tamamını yapıştırdığından emin ol.";return}
+    if(!v||v.app!=="tiroid-defterim"||!v.days){$("#bkMsg").style.color="var(--bad)";$("#bkMsg").textContent="Bu metin bir FlutterThyro yedeği değil. Tamamını yapıştırdığından emin ol.";return}
     if(b.dataset.ok!=="1"){b.dataset.ok="1";b.textContent="Emin misin? Aynı günlerin kaydı değişir. Evet, yükle";return}
     S.settings={...DEFAULTS,...v.settings};Object.assign(S.days,v.days);saveSettings();Object.keys(v.days).forEach(saveDay);pushReminder();toast(Object.keys(v.days).length+" günlük kayıt yüklendi");render()}
   else if(b.id==="saveSet"){const st=S.settings;

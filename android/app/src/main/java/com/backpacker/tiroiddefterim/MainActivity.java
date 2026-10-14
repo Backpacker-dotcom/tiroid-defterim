@@ -112,7 +112,7 @@ public class MainActivity extends Activity {
                 c.disconnect();
                 byte[] data = out.toByteArray();
                 String txt = new String(data, StandardCharsets.UTF_8);
-                if (data.length < 2000 || !txt.contains("Tiroid Defterim") || !txt.contains("</script>")) continue;
+                if (data.length < 2000 || !(txt.contains("FlutterThyro") || txt.contains("Tiroid Defterim")) || !txt.contains("</script>")) continue;
                 File tmp = new File(getFilesDir(), "index.tmp");
                 FileOutputStream fo = new FileOutputStream(tmp);
                 fo.write(data);

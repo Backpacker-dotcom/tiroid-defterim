@@ -34,7 +34,7 @@ public class Bridge {
                     done = true;
                     PrintManager pm = (PrintManager) act.getSystemService(Context.PRINT_SERVICE);
                     if (pm == null) return;
-                    String job = (name == null || name.isEmpty()) ? "Tiroid-raporu" : name;
+                    String job = (name == null || name.isEmpty()) ? "FlutterThyro-rapor" : name;
                     PrintDocumentAdapter ad = view.createPrintDocumentAdapter(job);
                     PrintAttributes attrs = new PrintAttributes.Builder()
                             .setMediaSize(PrintAttributes.MediaSize.ISO_A4)
@@ -86,7 +86,7 @@ public class Bridge {
     @JavascriptInterface
     public void copy(String text) {
         ClipboardManager cm = (ClipboardManager) ctx.getSystemService(Context.CLIPBOARD_SERVICE);
-        if (cm != null) cm.setPrimaryClip(ClipData.newPlainText("Tiroid Defterim yedeği", text));
+        if (cm != null) cm.setPrimaryClip(ClipData.newPlainText("FlutterThyro yedeği", text));
     }
 
     @JavascriptInterface

@@ -1,8 +1,8 @@
-# Tiroid Defterim
+# FlutterThyro
 
 Haşimato için kişisel diyet ve ilaç takip uygulaması (Android).
 
-- **İndir:** [TiroidDefterim.apk (son sürüm)](https://github.com/Backpacker-dotcom/tiroid-defterim/releases/latest/download/TiroidDefterim.apk)
+- **İndir:** [FlutterThyro.apk (son sürüm)](https://github.com/Backpacker-dotcom/tiroid-defterim/releases/latest/download/FlutterThyro.apk)
 - Yiyecek araması: yiyebilirsin / dikkatli ye / uzak dur
 - Günlük kalori ve protein, yağ, karbonhidrat takibi; aşım ertesi günün hedefinden düşülür
 - Gün gün, ay ay geçmiş

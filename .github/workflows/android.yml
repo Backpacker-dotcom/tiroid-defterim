@@ -27,14 +27,18 @@ jobs:
         working-directory: android
         run: gradle --no-daemon assembleRelease
       - name: APK'yı adlandır
-        run: cp android/app/build/outputs/apk/release/app-release.apk TiroidDefterim.apk
+        run: |
+          cp android/app/build/outputs/apk/release/app-release.apk FlutterThyro.apk
+          cp FlutterThyro.apk TiroidDefterim.apk
       - name: Sürüm olarak yayınla
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v1.0.${{ github.run_number }}
-          name: Tiroid Defterim 1.0.${{ github.run_number }}
+          name: FlutterThyro 1.0.${{ github.run_number }}
           make_latest: true
-          files: TiroidDefterim.apk
+          files: |
+            FlutterThyro.apk
+            TiroidDefterim.apk
           body: |
-            Telefona kurmak için aşağıdaki TiroidDefterim.apk dosyasını indir.
+            Telefona kurmak için aşağıdaki FlutterThyro.apk dosyasını indir (TiroidDefterim.apk aynı dosyadır, eski bağlantılar için duruyor).
             Uygulama ekranları ve yiyecek listesi buradan otomatik güncellenir; yeniden kurman gerekmez.
