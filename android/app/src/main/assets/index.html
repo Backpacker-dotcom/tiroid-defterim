@@ -177,6 +177,15 @@ nav.tabs button{border:0;background:transparent;display:flex;flex-direction:colu
 nav.tabs button[aria-current="page"]{color:var(--accent);background:var(--accent-soft)}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:14px;font-weight:600;z-index:30;max-width:calc(100% - 32px)}
 .sync{font-size:11.5px;color:var(--muted)}
+.onb{position:fixed;inset:0;z-index:40;background:var(--bg);overflow-y:auto}
+.onb .in{max-width:520px;margin:0 auto;display:flex;flex-direction:column;gap:14px;
+  padding-left:max(18px,env(safe-area-inset-left,0px));padding-right:max(18px,env(safe-area-inset-right,0px));
+  padding-block:calc(28px + env(safe-area-inset-top,0px)) calc(28px + env(safe-area-inset-bottom,0px))}
+.onb h1{font-family:var(--f-display);font-size:26px;line-height:1.15;margin:0;text-wrap:balance;letter-spacing:-.02em}
+.onb .lead{color:var(--muted);margin:0}
+.onb .stepno{width:26px;height:26px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:inline-grid;place-items:center;font-weight:700;font-size:13px;flex:none}
+.onb .sh{display:flex;gap:10px;align-items:center}
+.linkbtn{border:0;background:none;color:var(--accent);font-weight:700;padding:0;text-align:left}
 @media (prefers-reduced-motion:no-preference){.bar i,.ring circle{transition:all .4s ease}}
 </style>
 
@@ -543,6 +552,7 @@ async function initCloud(){
       cloud=col; lsSave();
     }
     $("#sync").textContent="Hesabına kaydediliyor";
+    if(Object.keys(S.days).length){const o=document.querySelector(".onb");if(o)o.remove();if(!S.settings.onboarded){S.settings.onboarded=true;saveSettings()}}
     render();
   }catch(e){$("#sync").textContent="Bu cihazda kayıtlı"}
 }
@@ -777,6 +787,58 @@ function openNewFood(){
       saveSettings();sc.remove();q=n;toast("Yiyecek kaydedildi");render();}
   });
 }
+function showOnboarding(){
+  const st=S.settings;const o=document.createElement("div");o.className="onb";o.setAttribute("role","dialog");o.setAttribute("aria-label","Hoş geldin");
+  let sex="k",act=1.375;
+  o.innerHTML=`<div class="in">
+  <svg class="logo" style="width:46px;height:46px" viewBox="0 0 32 32" aria-hidden="true"><path fill="var(--accent)" d="M16 9c-2-4-7-6-10-4s-3 9 0 13 7 5 9 3c1-1 1-3 1-4 0 1 0 3 1 4 2 2 6 1 9-3s3-11 0-13-8 0-10 4z"/></svg>
+  <h1>Tiroid Defterim'e hoş geldin</h1>
+  <p class="lead">Haşimato'ya uygun yiyecekleri bul, günlük kalorini takip et, ilacını unutma. Önce üç bilgiye ihtiyacım var.</p>
+  <section class="card" style="display:flex;flex-direction:column;gap:12px">
+    <div class="sh"><span class="stepno">1</span><h2>Günlük kalori ihtiyacın</h2></div>
+    <div class="field"><label for="oK">kcal</label><input id="oK" type="number" inputmode="numeric" value="${st.kcal}"></div>
+    <button class="linkbtn" id="oCalcT" aria-expanded="false">Bilmiyorum, hesapla</button>
+    <div id="oCalc" hidden style="display:flex;flex-direction:column;gap:10px">
+      <div class="seg" role="group" aria-label="Cinsiyet"><button data-sex="k" aria-pressed="true">Kadın</button><button data-sex="e" aria-pressed="false">Erkek</button></div>
+      <div class="row"><div class="field"><label for="oA">Yaş</label><input id="oA" type="number" inputmode="numeric" placeholder="40"></div>
+      <div class="field"><label for="oH">Boy (cm)</label><input id="oH" type="number" inputmode="numeric" placeholder="165"></div>
+      <div class="field"><label for="oW">Kilo (kg)</label><input id="oW" type="number" inputmode="decimal" placeholder="70"></div></div>
+      <div class="field"><label for="oAct">Gün içinde ne kadar hareketlisin?</label><select id="oAct">
+        <option value="1.2">Çoğunlukla oturarak</option><option value="1.375" selected>Hafif (yürüyüş, ev işi)</option><option value="1.55">Orta (haftada 3-5 gün spor)</option><option value="1.725">Çok hareketli</option></select></div>
+      <label style="display:flex;gap:10px;align-items:center"><input id="oLose" type="checkbox" style="width:20px;height:20px"> Kilo vermek istiyorum (günde 400 kcal az)</label>
+      <button class="btn" id="oDo">Hesapla</button>
+      <div class="small muted" id="oRes">Mifflin-St Jeor formülüyle tahmin edilir. Diyetisyenin sana bir değer verdiyse onu kullan.</div>
+    </div>
+  </section>
+  <section class="card" style="display:flex;flex-direction:column;gap:12px">
+    <div class="sh"><span class="stepno">2</span><h2>İlacın</h2></div>
+    <div class="row"><div class="field"><label for="oM">İlacın adı</label><input id="oM" value="${esc(st.medName)}" placeholder="Levotiron, Euthyrox, Tefor…"></div>
+    <div class="field"><label for="oT">Her sabah saat</label><input id="oT" type="time" value="${st.medTime}"></div></div>
+    <div class="small muted">${window.Android?"Her gün bu saatte bildirim gelir.":"Bu saati takvimde ve günlük ilaç düzeninde kullanırız."}</div>
+  </section>
+  <section class="card" style="display:flex;flex-direction:column;gap:8px">
+    <div class="sh"><span class="stepno">3</span><h2>Bilmen gereken</h2></div>
+    <p class="small" style="margin:0">Yiyeceklerin yeşil, sarı ve kırmızı işaretleri genel Haşimato beslenme önerilerine dayanır. Herkesin durumu farklıdır; doktorunun ve diyetisyeninin söyledikleri her zaman önce gelir. Bu uygulama tıbbi tavsiye yerine geçmez.</p>
+  </section>
+  <div class="small" id="oErr" style="color:var(--bad)"></div>
+  <button class="btn primary" id="oGo" style="padding:14px;font-size:16px">Başla</button>
+  </div>`;
+  document.body.appendChild(o);
+  o.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
+    if(b.id==="oCalcT"){const c=$("#oCalc");c.hidden=!c.hidden;b.setAttribute("aria-expanded",!c.hidden)}
+    if(b.dataset.sex){sex=b.dataset.sex;o.querySelectorAll("[data-sex]").forEach(x=>x.setAttribute("aria-pressed",x===b))}
+    if(b.id==="oDo"){const a=+$("#oA").value,h=+$("#oH").value,w=+$("#oW").value;
+      if(!(a>12&&a<100&&h>120&&h<230&&w>30&&w<250)){$("#oRes").textContent="Yaş, boy ve kiloyu gir.";$("#oRes").style.color="var(--bad)";return}
+      const bmr=10*w+6.25*h-5*a+(sex==="e"?5:-161);let k=bmr*(+$("#oAct").value);
+      if($("#oLose").checked)k-=400;k=Math.max(sex==="e"?1500:1200,Math.round(k/50)*50);
+      $("#oK").value=k;$("#oRes").style.color="var(--muted)";$("#oRes").textContent=`Tahmini ihtiyacın: ${k} kcal. Kutuya yazdım, istersen değiştirebilirsin.`}
+    if(b.id==="oGo"){const k=+$("#oK").value;
+      if(!(k>=800&&k<=5000)){$("#oErr").textContent="Kalori 800 ile 5000 arasında olmalı. Bilmiyorsan “Bilmiyorum, hesapla”ya dokun.";return}
+      st.kcal=k;st.medName=$("#oM").value.trim()||"İlacım";st.medTime=$("#oT").value||"08:45";st.onboarded=true;
+      const d=day(todayKey());if(!d.entries.length)d.target=targetFor(todayKey()).kcal;
+      saveSettings();pushReminder();o.remove();tab="today";render();toast("Hazırsın, afiyet olsun")}
+  });
+}
 let tt;function toast(m){document.querySelectorAll(".toast").forEach(x=>x.remove());const t=document.createElement("div");t.className="toast";t.textContent=m;t.setAttribute("role","status");document.body.appendChild(t);clearTimeout(tt);tt=setTimeout(()=>t.remove(),2200)}
 
 /* ---------- Render & olaylar ---------- */
@@ -826,6 +888,7 @@ window.onNativeResume=()=>{syncNative();render()};
 pushReminder();
 try{const t=localStorage.getItem(LS+"-tab");if(t)tab=t}catch(e){}
 render();
+if(!S.settings.onboarded){if(Object.keys(S.days).length){S.settings.onboarded=true;saveSettings()}else showOnboarding()}
 syncNative();
 initCloud();
 setInterval(()=>{if(tab==="today"&&!document.querySelector(".scrim"))render()},60000);
