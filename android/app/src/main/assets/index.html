@@ -172,11 +172,33 @@ h2{font-family:var(--f-display);font-size:16px;font-weight:600;margin:0}
 /* Alt sekmeler */
 nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:10;background:var(--surface);border-top:1px solid var(--line);
   padding:6px max(8px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px))}
-nav.tabs .in{max-width:560px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+nav.tabs .in{max-width:560px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);gap:2px}
 nav.tabs button{border:0;background:transparent;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0;font-size:11.5px;font-weight:700;color:var(--muted);border-radius:10px}
 nav.tabs button[aria-current="page"]{color:var(--accent);background:var(--accent-soft)}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:14px;font-weight:600;z-index:30;max-width:calc(100% - 32px)}
 .sync{font-size:11.5px;color:var(--muted)}
+.ing{display:grid;grid-template-columns:1fr 78px auto auto;gap:8px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+.ing:first-child{border-top:0}
+.ing .n{min-width:0;font-size:14px}
+.ing .n .nm{font-weight:600}
+.ing input{width:100%;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:7px 8px;font-size:15px;text-align:right}
+.ing .k{font-variant-numeric:tabular-nums;font-size:13px;color:var(--muted);min-width:52px;text-align:right}
+.ing.st-no .nm{color:var(--bad)}
+.ing .tag,.rcp .tag{font-size:11px;font-weight:700;border-radius:99px;padding:2px 7px;margin-left:6px;white-space:nowrap}
+.ing.st-no .tag,.rcp.st-no .tag{background:var(--bad-soft);color:var(--bad)}
+.ing.st-care .tag,.rcp.st-care .tag{background:var(--warn-soft);color:var(--warn)}
+.rcp.st-ok .tag{background:var(--good-soft);color:var(--good)}
+.drop{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface)}
+.drop button{border:0;border-top:1px solid var(--line);background:transparent;text-align:left;padding:10px 12px;display:flex;gap:8px;align-items:center;font-size:14px}
+.drop button:first-child{border-top:0}
+.drop button .dot{width:9px;height:9px;border-radius:50%;flex:none}
+.drop button small{margin-left:auto;color:var(--muted);font-variant-numeric:tabular-nums}
+.rcp{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;gap:10px;align-items:center;text-align:left;width:100%;position:relative;overflow:hidden}
+.rcp::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--st)}
+.rcp .b{flex:1;min-width:0}
+.rcp .b b{font-size:15px}
+.rcp .b small{display:block;color:var(--muted);font-size:12.5px;font-variant-numeric:tabular-nums;margin-top:2px}
+.steps{white-space:pre-wrap;font-size:14.5px;line-height:1.55;margin:0}
 .onb{position:fixed;inset:0;z-index:40;background:var(--bg);overflow-y:auto}
 .onb .in{max-width:520px;margin:0 auto;display:flex;flex-direction:column;gap:14px;
   padding-left:max(18px,env(safe-area-inset-left,0px));padding-right:max(18px,env(safe-area-inset-right,0px));
@@ -201,6 +223,7 @@ nav.tabs button[aria-current="page"]{color:var(--accent);background:var(--accent
 <nav class="tabs" aria-label="Bölümler"><div class="in">
   <button data-tab="today" aria-current="page"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Bugün</button>
   <button data-tab="search"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Ara</button>
+  <button data-tab="cook"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 11h16v2a7 7 0 0 1-7 7h-2a7 7 0 0 1-7-7z"/><path d="M8 7c0-1.5 1-2 1-3.5M12 7c0-1.5 1-2 1-3.5M16 7c0-1.5 1-2 1-3.5"/></svg>Yemek yap</button>
   <button data-tab="history"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Geçmiş</button>
   <button data-tab="settings"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>Ayarlar</button>
 </div></nav>
@@ -774,7 +797,7 @@ async function initCloud(){
       cloud=col; lsSave();
     }
     $("#sync").textContent="Hesabına kaydediliyor";
-    if(Object.keys(S.days).length){const o=document.querySelector(".onb");if(o)o.remove();if(!S.settings.onboarded){S.settings.onboarded=true;saveSettings()}}
+    if(hasData()){const o=document.querySelector(".onb");if(o)o.remove();if(!S.settings.welcomed){S.settings.welcomed=true;saveSettings()}}
     render();
   }catch(e){$("#sync").textContent="Bu cihazda kayıtlı"}
 }
@@ -956,7 +979,7 @@ function vSettings(){
 /* ---------- Ekleme penceresi ---------- */
 function defaultMeal(){const h=new Date().getHours();return h<11?"kahvalti":h<16?"ogle":h<21?"aksam":"ara"}
 function openAdd(f){
-  let g=f.por||100, meal=defaultMeal();
+  let g=f.por||100, meal=f.meal||defaultMeal();
   const [cls,lab]=ST[f.d];
   const sc=document.createElement("div");sc.className="scrim";
   sc.innerHTML=`<div class="sheet" role="dialog" aria-modal="true" aria-label="${esc(f.n)} ekle">
@@ -1056,10 +1079,93 @@ function showOnboarding(){
       $("#oK").value=k;$("#oRes").style.color="var(--muted)";$("#oRes").textContent=`Tahmini ihtiyacın: ${k} kcal. Kutuya yazdım, istersen değiştirebilirsin.`}
     if(b.id==="oGo"){const k=+$("#oK").value;
       if(!(k>=800&&k<=5000)){$("#oErr").textContent="Kalori 800 ile 5000 arasında olmalı. Bilmiyorsan “Bilmiyorum, hesapla”ya dokun.";return}
-      st.kcal=k;st.medName=$("#oM").value.trim()||"İlacım";st.medTime=$("#oT").value||"08:45";st.onboarded=true;
+      st.kcal=k;st.medName=$("#oM").value.trim()||"İlacım";st.medTime=$("#oT").value||"08:45";st.welcomed=true;
       const d=day(todayKey());if(!d.entries.length)d.target=targetFor(todayKey()).kcal;
       saveSettings();pushReminder();o.remove();tab="today";render();toast("Hazırsın, afiyet olsun")}
   });
+}
+/* ---------- Yemek yap / Yemeklerim ---------- */
+let draft=null, openRecipe=null, rq="";
+const worst=items=>items.some(i=>i.d==="no")?"no":items.some(i=>i.d==="care")?"care":"ok";
+function recipes(){return S.settings.recipes||(S.settings.recipes=[])}
+function rTotals(items){const t={g:0,k:0,p:0,f:0,c:0};items.forEach(i=>{const m=i.g/100;t.g+=i.g;t.k+=i.k*m;t.p+=i.p*m;t.f+=i.f*m;t.c+=i.c*m});return t}
+function newDraft(r){draft=r?JSON.parse(JSON.stringify(r)):{id:"r"+Date.now().toString(36),name:"",meal:defaultMeal(),servings:2,items:[],steps:""};rq="";}
+function vCook(){
+  if(draft){
+    return `<section class="card" style="display:flex;flex-direction:column;gap:12px">
+      <h2>${recipes().some(r=>r.id===draft.id)?"Yemeği düzenle":"Yeni yemek"}</h2>
+      <div class="field"><label for="rName">Yemeğin adı</label><input id="rName" value="${esc(draft.name)}" placeholder="Fırında sebzeli tavuk"></div>
+      <div class="seg" role="group" aria-label="Öğün">${MEALS.map(([m,l])=>`<button data-rmeal="${m}" aria-pressed="${m===draft.meal}">${l}</button>`).join("")}</div>
+      <div class="field"><label for="rServ">Kaç porsiyon çıkıyor?</label><input id="rServ" type="number" inputmode="numeric" min="1" max="20" value="${draft.servings}"></div>
+    </section>
+    <section class="card" style="display:flex;flex-direction:column;gap:10px">
+      <h2>Malzemeler</h2>
+      <div class="search"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="ri" type="search" placeholder="Malzeme ara: tavuk, zeytinyağı, soğan…" autocomplete="off" value="${esc(rq)}" aria-label="Malzeme ara"></div>
+      <div id="rDrop"></div>
+      <div id="rItems"></div>
+    </section>
+    <section class="card" id="rTot"></section>
+    <section class="card" style="display:flex;flex-direction:column;gap:8px">
+      <h2>Yapılışı</h2>
+      <textarea id="rSteps" rows="6" placeholder="1. Tavukları kuşbaşı doğra.&#10;2. Sebzeleri ekle, 200 derecede 40 dk pişir." style="width:100%;border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:10px;font-size:15px;font-family:inherit;line-height:1.5">${esc(draft.steps)}</textarea>
+    </section>
+    <div class="small" id="rErr" style="color:var(--bad)"></div>
+    <div class="row"><button class="btn ghost" id="rCancel">Vazgeç</button><button class="btn primary" id="rSave">Yemeklerime ekle</button></div>`;
+  }
+  if(openRecipe){const r=recipes().find(x=>x.id===openRecipe);if(!r){openRecipe=null;return vCook()}
+    const t=rTotals(r.items),sv=r.servings||1,st=worst(r.items),bad=r.items.filter(i=>i.d!=="ok");
+    return `<button class="btn ghost sm" id="rBack" style="align-self:flex-start">‹ Yemeklerim</button>
+    <section class="card ${ST[st][0]}" style="display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><h2 style="font-size:19px">${esc(r.name)}</h2><span class="pill">${ST[st][1]}</span></div>
+      <div class="small muted">${MEALS.find(m=>m[0]===r.meal)?.[1]||""} · ${sv} porsiyon · porsiyonu ${r0(t.g/sv)} g</div>
+      <div class="preview"><div><b>${r0(t.k/sv)}</b><span>kcal / porsiyon</span></div><div><b>${r1(t.p/sv)}</b><span>protein g</span></div><div><b>${r1(t.f/sv)}</b><span>yağ g</span></div><div><b>${r1(t.c/sv)}</b><span>karb. g</span></div></div>
+      ${bad.length?`<div class="notice ${st==="no"?"":"warn"}" style="${st==="no"?"background:var(--bad-soft);color:var(--bad)":""}">${bad.map(i=>`<b>${esc(i.n)}</b>: ${esc((allFoods().find(f=>f.n===i.n)||{}).why||ST[i.d][1])}`).join("<br>")}</div>`:""}
+      <button class="btn primary" id="rToday">Bugüne ekle</button>
+    </section>
+    <section class="card"><h2>Malzemeler <span class="small muted" style="font-weight:400">(${sv} porsiyon için)</span></h2><div style="margin-top:6px">
+      ${r.items.map(i=>`<div class="entry ${ST[i.d][0]}"><div class="n"><span class="nm">${esc(i.n)}</span>${i.d!=="ok"?`<span class="tag">${ST[i.d][1]}</span>`:""}</div><span class="num">${i.g} g</span></div>`).join("")}</div></section>
+    ${r.steps?`<section class="card"><h2>Yapılışı</h2><p class="steps" style="margin-top:8px">${esc(r.steps)}</p></section>`:""}
+    <div class="row"><button class="btn" id="rEdit">Düzenle</button><button class="btn ghost" id="rDel" style="color:var(--bad)">Sil</button></div>`;
+  }
+  const list=recipes();
+  return `<section class="card" style="display:flex;flex-direction:column;gap:10px">
+    <h2>Yemek yap</h2>
+    <p class="small muted" style="margin:0">Malzemeleri ve gramlarını gir, kalorisi ve porsiyonu hesaplansın. Kaydettiğin yemekleri tarif olarak saklar, istediğin gün tek dokunuşla öğününe eklersin.</p>
+    <button class="btn primary" id="rNew">+ Yeni yemek</button></section>
+  <div style="display:flex;justify-content:space-between;align-items:baseline"><h2>Yemeklerim</h2><span class="small muted">${list.length} tarif</span></div>
+  ${list.length?`<div class="results">${list.map(r=>{const t=rTotals(r.items),sv=r.servings||1,st=worst(r.items);
+    return `<button class="rcp ${ST[st][0]}" data-rid="${r.id}"><div class="b"><b>${esc(r.name)}</b><span class="tag">${ST[st][1]}</span><small>${MEALS.find(m=>m[0]===r.meal)?.[1]||""} · ${r0(t.k/sv)} kcal / porsiyon · ${r.items.length} malzeme</small></div><span class="muted" aria-hidden="true">›</span></button>`}).join("")}</div>`
+  :`<div class="empty">Henüz kayıtlı yemeğin yok.<br>“Yeni yemek” ile ilk tarifini oluştur.</div>`}`;
+}
+function updDraft(){
+  const box=$("#rItems");if(!box)return;
+  box.innerHTML=draft.items.length?draft.items.map((i,x)=>`<div class="ing ${ST[i.d][0]}"><div class="n"><span class="nm">${esc(i.n)}</span>${i.d!=="ok"?`<span class="tag">${ST[i.d][1]}</span>`:""}</div>
+    <input type="number" inputmode="decimal" aria-label="${esc(i.n)} gram" data-ig="${x}" value="${i.g}"><span class="k" id="ik${x}">${r0(i.k*i.g/100)} kcal</span><button class="x" data-irm="${x}" aria-label="${esc(i.n)} çıkar">×</button></div>`).join("")
+    :`<div class="empty" style="padding:10px">Yukarıdan malzeme arayıp ekle. Gramlar ${"çiğ"} haliyle yazılır.</div>`;
+  updTot();
+}
+function updTot(){
+  const el=$("#rTot");if(!el)return;const t=rTotals(draft.items),sv=Math.max(1,+draft.servings||1),st=worst(draft.items);
+  const bad=[...new Set(draft.items.filter(i=>i.d==="no").map(i=>i.n))];
+  el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px" class="${ST[st][0]}"><h2>Hesap</h2>${draft.items.length?`<span class="pill">${ST[st][1]}</span>`:""}</div>
+  <div class="kv" style="margin-top:8px"><span class="muted">Toplam</span><b>${r0(t.k)} kcal · ${r0(t.g)} g</b></div>
+  <div class="preview" style="margin-top:10px"><div><b>${r0(t.k/sv)}</b><span>kcal / porsiyon</span></div><div><b>${r1(t.p/sv)}</b><span>protein g</span></div><div><b>${r1(t.f/sv)}</b><span>yağ g</span></div><div><b>${r1(t.c/sv)}</b><span>karb. g</span></div></div>
+  ${bad.length?`<div class="alert" style="margin-top:10px"><b>Bu yemekte uzak durman gereken malzeme var</b>${bad.map(esc).join(", ")}</div>`:""}`;
+}
+function rDrop(){
+  const box=$("#rDrop");if(!box)return;const qq=trLower(rq.trim());
+  if(!qq){box.innerHTML="";return}
+  const AF=allFoods();AF.forEach((f,i)=>f._i=i);
+  const list=AF.filter(f=>trLower(f.n).includes(qq)||(f.al&&f.al.some?f.al:[]).some(a=>trLower(a).includes(qq)))
+    .sort((a,b)=>(trLower(a.n).startsWith(qq)?0:1)-(trLower(b.n).startsWith(qq)?0:1)).slice(0,8);
+  box.innerHTML=list.length?`<div class="drop">${list.map(f=>`<button data-radd="${f._i}"><span class="dot" style="background:var(--${f.d==="ok"?"good":f.d==="care"?"warn":"bad"})"></span>${esc(f.n)}<small>${f.k} kcal/100 g</small></button>`).join("")}</div>`
+    :`<div class="small muted">“${esc(rq)}” bulunamadı. Ara sekmesinden kendi yiyeceğini ekleyebilirsin.</div>`;
+}
+function openRecipeAdd(r){
+  const t=rTotals(r.items),sv=r.servings||1,per=t.g/sv,st=worst(r.items);
+  openAdd({n:r.name,k:t.g?t.k/t.g*100:0,p:t.g?t.p/t.g*100:0,f:t.g?t.f/t.g*100:0,c:t.g?t.c/t.g*100:0,d:st,
+    why:st==="ok"?"":"İçinde "+r.items.filter(i=>i.d===st).map(i=>i.n).join(", ")+" var.",por:Math.round(per),pl:"1 porsiyon",meal:r.meal});
 }
 let tt;function toast(m){document.querySelectorAll(".toast").forEach(x=>x.remove());const t=document.createElement("div");t.className="toast";t.textContent=m;t.setAttribute("role","status");document.body.appendChild(t);clearTimeout(tt);tt=setTimeout(()=>t.remove(),2200)}
 
@@ -1067,13 +1173,22 @@ let tt;function toast(m){document.querySelectorAll(".toast").forEach(x=>x.remove
 function render(){
   $("#hdrDate").textContent=fmtDate(new Date(),{day:"numeric",month:"long",weekday:"short"});
   const v=$("#view");
-  v.innerHTML=tab==="today"?vToday():tab==="search"?vSearch():tab==="history"?vHistory():vSettings();
+  v.innerHTML=tab==="today"?vToday():tab==="search"?vSearch():tab==="cook"?vCook():tab==="history"?vHistory():vSettings();
+  if(tab==="cook"&&draft)updDraft();
   if(tab==="search")renderResults();
   document.querySelectorAll("nav.tabs button").forEach(b=>b.dataset.tab===tab?b.setAttribute("aria-current","page"):b.removeAttribute("aria-current"));
   try{localStorage.setItem(LS+"-tab",tab)}catch(e){}
 }
 document.querySelector("nav.tabs").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;tab=b.dataset.tab;render();window.scrollTo(0,0)});
-$("#view").addEventListener("input",e=>{if(e.target.id==="q"){q=e.target.value;renderResults()}});
+$("#view").addEventListener("input",e=>{const t=e.target;
+  if(t.id==="q"){q=t.value;renderResults()}
+  if(!draft)return;
+  if(t.id==="ri"){rq=t.value;rDrop()}
+  else if(t.id==="rName")draft.name=t.value;
+  else if(t.id==="rServ"){draft.servings=Math.max(1,Math.min(20,+t.value||1));updTot()}
+  else if(t.id==="rSteps")draft.steps=t.value;
+  else if(t.dataset.ig!==undefined){const i=draft.items[+t.dataset.ig];i.g=Math.max(0,+t.value||0);$("#ik"+t.dataset.ig).textContent=r0(i.k*i.g/100)+" kcal";updTot()}
+});
 $("#view").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
   const k=todayKey();
   if(b.id==="medTake"){const n=new Date();day(k).med={at:pad(n.getHours())+":"+pad(n.getMinutes())};saveDay(k);toast("İlaç işaretlendi");render()}
@@ -1083,6 +1198,24 @@ $("#view").addEventListener("click",e=>{const b=e.target.closest("button");if(!b
   else if(b.dataset.cat){cat=b.dataset.cat;document.querySelectorAll("[data-cat]").forEach(x=>x.setAttribute("aria-pressed",x===b));renderResults()}
   else if(b.dataset.add){openAdd(allFoods()[+b.dataset.add])}
   else if(b.id==="newFood"){openNewFood()}
+  else if(b.id==="rNew"){newDraft();openRecipe=null;render();setTimeout(()=>$("#rName")&&$("#rName").focus(),30)}
+  else if(b.dataset.rmeal){draft.meal=b.dataset.rmeal;document.querySelectorAll("[data-rmeal]").forEach(x=>x.setAttribute("aria-pressed",x===b))}
+  else if(b.dataset.radd){const f=allFoods()[+b.dataset.radd];draft.items.push({n:f.n,g:f.por||100,k:f.k,p:f.p,f:f.f,c:f.c,d:f.d});rq="";$("#ri").value="";rDrop();updDraft();
+    const ins=document.querySelectorAll("[data-ig]");const last=ins[ins.length-1];if(last){last.focus();last.select()}}
+  else if(b.dataset.irm!==undefined){draft.items.splice(+b.dataset.irm,1);updDraft()}
+  else if(b.id==="rCancel"){const id=draft.id;draft=null;openRecipe=recipes().some(r=>r.id===id)?id:null;render()}
+  else if(b.id==="rSave"){draft.name=draft.name.trim();
+    if(!draft.name){$("#rErr").textContent="Yemeğe bir ad ver.";return}
+    if(!draft.items.length){$("#rErr").textContent="En az bir malzeme ekle.";return}
+    draft.items=draft.items.filter(i=>i.g>0);
+    const L=recipes(),ix=L.findIndex(r=>r.id===draft.id);if(ix>=0)L[ix]=draft;else L.unshift(draft);
+    openRecipe=draft.id;draft=null;saveSettings();toast("Yemeklerine eklendi");render();window.scrollTo(0,0)}
+  else if(b.dataset.rid){openRecipe=b.dataset.rid;render();window.scrollTo(0,0)}
+  else if(b.id==="rBack"){openRecipe=null;render()}
+  else if(b.id==="rEdit"){newDraft(recipes().find(r=>r.id===openRecipe));render()}
+  else if(b.id==="rDel"){if(b.dataset.ok!=="1"){b.dataset.ok="1";b.textContent="Emin misin? Sil";return}
+    S.settings.recipes=recipes().filter(r=>r.id!==openRecipe);openRecipe=null;saveSettings();toast("Yemek silindi");render()}
+  else if(b.id==="rToday"){openRecipeAdd(recipes().find(r=>r.id===openRecipe))}
   else if(b.id==="mPrev"){histMonth=new Date(histMonth.getFullYear(),histMonth.getMonth()-1,1);selDay=null;render()}
   else if(b.id==="mNext"){histMonth=new Date(histMonth.getFullYear(),histMonth.getMonth()+1,1);selDay=null;render()}
   else if(b.dataset.day){selDay=b.dataset.day;render()}
@@ -1110,7 +1243,8 @@ window.onNativeResume=()=>{syncNative();render()};
 pushReminder();
 try{const t=localStorage.getItem(LS+"-tab");if(t)tab=t}catch(e){}
 render();
-if(!S.settings.onboarded){if(Object.keys(S.days).length){S.settings.onboarded=true;saveSettings()}else showOnboarding()}
+const hasData=()=>Object.values(S.days).some(d=>d&&((d.entries&&d.entries.length)||d.med));
+if(!S.settings.welcomed){if(hasData()){S.settings.welcomed=true;saveSettings()}else showOnboarding()}
 syncNative();
 initCloud();
 setInterval(()=>{if(tab==="today"&&!document.querySelector(".scrim"))render()},60000);
