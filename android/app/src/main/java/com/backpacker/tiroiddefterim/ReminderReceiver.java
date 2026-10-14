@@ -21,6 +21,18 @@ public class ReminderReceiver extends BroadcastReceiver {
     public void onReceive(Context c, Intent intent) {
         String a = intent.getAction() == null ? "" : intent.getAction();
         NotificationManager nm = (NotificationManager) c.getSystemService(Context.NOTIFICATION_SERVICE);
+        if (Reminder.ACTION_SUPP_TAKEN.equals(a)) {
+            Date now = new Date();
+            String v = new SimpleDateFormat("yyyy-MM-dd", Locale.US).format(now) + "|" + intent.getStringExtra("id") + "|"
+                    + new SimpleDateFormat("HH:mm", Locale.US).format(now);
+            try {
+                org.json.JSONArray arr = new org.json.JSONArray(Bridge.prefs(c).getString("suppTaken", "[]"));
+                arr.put(v);
+                Bridge.prefs(c).edit().putString("suppTaken", arr.toString()).apply();
+            } catch (Exception ignored) { }
+            if (nm != null) nm.cancel(900 + intent.getIntExtra("idx", 0));
+            return;
+        }
         if (Reminder.ACTION_TAKEN.equals(a)) {
             Date now = new Date();
             String v = new SimpleDateFormat("yyyy-MM-dd", Locale.US).format(now) + "|"
@@ -31,7 +43,31 @@ public class ReminderReceiver extends BroadcastReceiver {
         }
         if (Reminder.ACTION_REMIND.equals(a) && nm != null) show(c, nm);
         if (Reminder.ACTION_WEIGHT.equals(a) && nm != null) showWeight(c, nm);
+        if (Reminder.ACTION_SUPP.equals(a) && nm != null) showSupp(c, nm, intent);
         Reminder.schedule(c);
+    }
+
+    private void showSupp(Context c, NotificationManager nm, Intent in) {
+        int idx = in.getIntExtra("idx", 0);
+        String id = in.getStringExtra("id"), name = in.getStringExtra("name");
+        if (id == null || id.isEmpty()) return;
+        if (Build.VERSION.SDK_INT >= 26) {
+            NotificationChannel ch = new NotificationChannel("takviye", "Takviye hatırlatıcı", NotificationManager.IMPORTANCE_HIGH);
+            ch.setDescription("Takviyeleri alma saatinde hatırlatır");
+            nm.createNotificationChannel(ch);
+        }
+        Intent open = new Intent(c, MainActivity.class).setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        PendingIntent openPi = PendingIntent.getActivity(c, 6, open, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        Notification.Builder b = Build.VERSION.SDK_INT >= 26 ? new Notification.Builder(c, "takviye") : new Notification.Builder(c);
+        b.setSmallIcon(R.drawable.ic_notify)
+                .setContentTitle(name + " zamanı")
+                .setContentText("Takviyeni alma saati geldi.")
+                .setContentIntent(openPi)
+                .setAutoCancel(true)
+                .setCategory(Notification.CATEGORY_REMINDER)
+                .addAction(R.drawable.ic_notify, "Aldım", Reminder.suppPending(c, Reminder.ACTION_SUPP_TAKEN, Reminder.SUPP_TAKEN_BASE + idx, idx, id, name));
+        if (Build.VERSION.SDK_INT < 26) b.setPriority(Notification.PRIORITY_HIGH).setDefaults(Notification.DEFAULT_ALL);
+        try { nm.notify(900 + idx, b.build()); } catch (SecurityException ignored) { }
     }
 
     private void showWeight(Context c, NotificationManager nm) {

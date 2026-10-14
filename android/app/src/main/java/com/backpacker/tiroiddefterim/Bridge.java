@@ -1,7 +1,17 @@
 package com.backpacker.tiroiddefterim;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.ClipData;
+import android.content.ContentResolver;
+import android.content.ContentValues;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.database.Cursor;
+import android.net.Uri;
+import android.os.Build;
+import android.os.Environment;
+import android.provider.MediaStore;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -11,6 +21,13 @@ import android.print.PrintManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+
+import org.json.JSONArray;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 
 /** Sayfanın telefonla konuştuğu köprü: window.Android */
 public class Bridge {
@@ -91,4 +108,98 @@ public class Bridge {
 
     @JavascriptInterface
     public String version() { return BuildConfig.VERSION_NAME; }
+
+    // ---------- Takviyeler ----------
+    @JavascriptInterface
+    public void setSupplements(String json) {
+        try { new JSONArray(json); } catch (Exception e) { return; }
+        prefs(ctx).edit().putString("supps", json).apply();
+        Reminder.schedule(ctx);
+    }
+
+    /** Bildirimden "Aldım" denen takviyeler: JSON dizi ["YYYY-MM-DD|id|HH:MM", ...] */
+    @JavascriptInterface
+    public String suppTaken() {
+        SharedPreferences p = prefs(ctx);
+        String v = p.getString("suppTaken", "[]");
+        p.edit().remove("suppTaken").apply();
+        return v;
+    }
+
+    // ---------- Yedek dosyası ----------
+    static final String FOLDER = "FlutterThyro";
+    private Uri lastUri;
+
+    /** Yedeği İndirilenler/FlutterThyro klasörüne yazar. "ok|yol", "perm" veya "err|mesaj" döner. */
+    @JavascriptInterface
+    public String saveBackup(String json, String name) {
+        try {
+            byte[] data = json.getBytes(StandardCharsets.UTF_8);
+            if (Build.VERSION.SDK_INT >= 29) {
+                ContentResolver cr = ctx.getContentResolver();
+                Uri col = MediaStore.Downloads.EXTERNAL_CONTENT_URI;
+                String rel = Environment.DIRECTORY_DOWNLOADS + "/" + FOLDER + "/";
+                try (Cursor c = cr.query(col, new String[]{MediaStore.MediaColumns._ID},
+                        MediaStore.MediaColumns.DISPLAY_NAME + "=? AND " + MediaStore.MediaColumns.RELATIVE_PATH + "=?",
+                        new String[]{name, rel}, null)) {
+                    while (c != null && c.moveToNext()) cr.delete(Uri.withAppendedPath(col, String.valueOf(c.getLong(0))), null, null);
+                } catch (Exception ignored) { }
+                ContentValues cv = new ContentValues();
+                cv.put(MediaStore.MediaColumns.DISPLAY_NAME, name);
+                cv.put(MediaStore.MediaColumns.MIME_TYPE, "application/json");
+                cv.put(MediaStore.MediaColumns.RELATIVE_PATH, rel);
+                Uri uri = cr.insert(col, cv);
+                if (uri == null) return "err|Dosya oluşturulamadı";
+                try (OutputStream os = cr.openOutputStream(uri)) { os.write(data); }
+                lastUri = uri;
+                prune(cr, col, rel);
+                return "ok|İndirilenler/" + FOLDER + "/" + name;
+            } else {
+                if (act.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                    act.runOnUiThread(() -> act.requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 9));
+                    return "perm";
+                }
+                File dir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), FOLDER);
+                if (!dir.exists()) dir.mkdirs();
+                File f = new File(dir, name);
+                try (FileOutputStream fo = new FileOutputStream(f)) { fo.write(data); }
+                lastUri = null;
+                return "ok|İndirilenler/" + FOLDER + "/" + name;
+            }
+        } catch (Exception e) {
+            return "err|" + e.getMessage();
+        }
+    }
+
+    /** En yeni 12 yedeği tutar, eskileri siler (sadece uygulamanın kendi dosyaları). */
+    private void prune(ContentResolver cr, Uri col, String rel) {
+        try (Cursor c = cr.query(col, new String[]{MediaStore.MediaColumns._ID},
+                MediaStore.MediaColumns.RELATIVE_PATH + "=? AND " + MediaStore.MediaColumns.DISPLAY_NAME + " LIKE 'FlutterThyro-yedek-%'",
+                new String[]{rel}, MediaStore.MediaColumns.DATE_ADDED + " DESC")) {
+            int i = 0;
+            while (c != null && c.moveToNext()) {
+                if (++i > 12) cr.delete(Uri.withAppendedPath(col, String.valueOf(c.getLong(0))), null, null);
+            }
+        } catch (Exception ignored) { }
+    }
+
+    /** Yedeği kaydedip paylaşma ekranını açar (Drive, e-posta, WhatsApp...). */
+    @JavascriptInterface
+    public void shareBackup(String json, String name) {
+        String r = saveBackup(json, name);
+        final Uri uri = lastUri;
+        act.runOnUiThread(() -> {
+            Intent i = new Intent(Intent.ACTION_SEND);
+            if (r.startsWith("ok") && uri != null) {
+                i.setType("application/json");
+                i.putExtra(Intent.EXTRA_STREAM, uri);
+                i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            } else {
+                i.setType("text/plain");
+                i.putExtra(Intent.EXTRA_TEXT, json);
+            }
+            i.putExtra(Intent.EXTRA_SUBJECT, name);
+            try { act.startActivity(Intent.createChooser(i, "Yedeği paylaş")); } catch (Exception ignored) { }
+        });
+    }
 }

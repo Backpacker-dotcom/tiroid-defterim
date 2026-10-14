@@ -7,6 +7,7 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
@@ -35,6 +36,18 @@ public class MainActivity extends Activity {
             "https://cdn.jsdelivr.net/gh/Backpacker-dotcom/tiroid-defterim@main/web/index.html"
     };
     private WebView web;
+    private ValueCallback<Uri[]> fileCb;
+
+    @Override
+    protected void onActivityResult(int req, int res, Intent data) {
+        super.onActivityResult(req, res, data);
+        if (req == 42 && fileCb != null) {
+            Uri[] r = null;
+            if (res == RESULT_OK && data != null && data.getData() != null) r = new Uri[]{data.getData()};
+            fileCb.onReceiveValue(r);
+            fileCb = null;
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,7 +60,17 @@ public class MainActivity extends Activity {
         s.setDatabaseEnabled(true);
         s.setTextZoom(100);
         web.addJavascriptInterface(new Bridge(this), "Android");
-        web.setWebChromeClient(new WebChromeClient());
+        web.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public boolean onShowFileChooser(WebView v, ValueCallback<Uri[]> cb, FileChooserParams params) {
+                if (fileCb != null) fileCb.onReceiveValue(null);
+                fileCb = cb;
+                Intent i = new Intent(Intent.ACTION_GET_CONTENT).addCategory(Intent.CATEGORY_OPENABLE).setType("*/*");
+                try { startActivityForResult(Intent.createChooser(i, "Yedek dosyasını seç"), 42); }
+                catch (Exception e) { fileCb = null; return false; }
+                return true;
+            }
+        });
         web.setWebViewClient(new WebViewClient() {
             @Override
             public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest req) {
