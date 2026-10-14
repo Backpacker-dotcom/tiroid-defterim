@@ -979,7 +979,7 @@ function dayNav(k){const t=todayKey(),d=parseKey(k);
 function medCard(k){const d=day(k),med=d.med,st=S.settings,today=isToday(k);
   const late=today&&!med&&nowMin()>toMin(st.medTime)+60;const dose=doseOn(k);
   const ico=`<div class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="8" width="18" height="8" rx="4" transform="rotate(-35 12 12)"/><path d="m9.5 8.5 5 7"/></svg></div>`;
-  const title=`<b>${esc(st.medName)}${dose?` · ${dose} mcg`:""}</b>`;
+  const title=`<b>${esc(dose?doseMed(dose):st.medName)}${dose?` · ${fmtDose(dose)}`:""}</b>`;
   if(medEdit||(!med&&!today))return `<section class="card" style="display:flex;flex-direction:column;gap:10px"><div class="med">${ico}<div class="txt">${title}<div class="small muted">${med?"Alma saatini düzelt":today?"Aldığın saati yaz":"Bu gün ilaç kaydı yok. Aldıysan saatini yaz."}</div></div></div>
     <div class="trow"><div class="field"><label for="medAt">Saat</label><input id="medAt" type="time" value="${med?med.at:today?nowHM():st.medTime}"></div><button class="btn primary" id="medSaveT">Kaydet</button>${med?`<button class="btn ghost" id="medUndo" style="color:var(--bad)">Alınmadı</button>`:""}${medEdit?`<button class="btn ghost" id="medCancel">Vazgeç</button>`:""}</div></section>`;
   return `<section class="card med ${med?"done":""}">${ico}
@@ -1273,9 +1273,40 @@ const SUPP_PRESETS=[["D vitamini",30,"Yağ içeren bir öğünle alınması emil
   ["Multivitamin (mineralli)",240,"Mineral içerdiği için ilaçtan en az 4 saat sonra al."],["Probiyotik",30,""],["Biotin",30,"Tahlil sonuçlarını (TSH, sT4) yanıltabilir; tahlilden 2–3 gün önce bırak."]];
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,5);
 const labsL=()=>S.settings.labs||(S.settings.labs=[]);
-const dosesL=()=>S.settings.doses||(S.settings.doses=[]);
+// Eski kayıtlarda ilaç adı yok; ilk okumada o anki ilaç adı yazılır ki sonradan ilaç değişince eski dönemler yanlış adla görünmesin
+const dosesL=()=>{const L=S.settings.doses||(S.settings.doses=[]);L.forEach(d=>{if(!d.med)d.med=S.settings.medName||"İlacım"});return L};
 const suppsL=()=>S.settings.supps||(S.settings.supps=[]);
-function doseOn(k){const L=dosesL().filter(x=>x.date<=k).sort((a,b)=>a.date<b.date?-1:1);return L.length?L[L.length-1].dose:null}
+// Doz kaydı: {id, med, dose, unit:"mcg"|"mg", date (başlangıç), end (isteğe bağlı bitiş), note}
+const doseUnit=d=>d&&d.unit==="mg"?"mg":"mcg";
+const doseMed=d=>(d&&d.med)||S.settings.medName||"İlacım";
+const doseMcg=d=>d.unit==="mg"?d.dose*1000:d.dose;
+const fmtDose=d=>d?numTR(d.dose)+" "+doseUnit(d):"";
+const fmtDoseFull=d=>d?doseMed(d)+" "+fmtDose(d):"";
+const dayN=(a,b)=>Math.round((parseKey(b)-parseKey(a))/864e5)+1;
+function doseChange(a,b){if(!a||!b)return null;
+  if(trLower(doseMed(a))!==trLower(doseMed(b)))return{kind:"switch",t:"ilaç değişti"};
+  const x=doseMcg(a),y=doseMcg(b);if(Math.abs(y-x)<1e-9)return{kind:"same",t:"aynı doz"};
+  const u=doseUnit(b),diff=Math.abs(y-x)/(u==="mg"?1000:1);
+  return{kind:y>x?"up":"down",t:(y>x?"▲ ":"▼ ")+numTR(diff)+" "+u+" ("+(y>x?"+":"−")+Math.round(Math.abs(y-x)/x*100)+"%)"}}
+// Kullanım dönemleri: her kayıt kendi bitişine ya da sonraki kaydın başlangıcından bir gün öncesine kadar sürer
+function doseRanges(){const L=dosesL().slice().sort((a,b)=>a.date<b.date?-1:1);
+  return L.map((d,i)=>{const nx=L[i+1];let to=d.end||null;if(nx){const cut=shiftKey(nx.date,-1);if(!to||to>cut)to=cut}if(to&&to<d.date)to=d.date;
+    const pv=i?L[i-1]:null;return{...d,to,chg:doseChange(pv,d)}})}
+function doseOn(k){return doseRanges().find(r=>r.date<=k&&(!r.to||r.to>=k))||null}
+function doseChart(R,a,b){const end=b||todayKey();R=R.filter(r=>r.date<=end);if(R.length<2)return"";
+  const W=300,H=130,L=8,Rr=8,T=18,B=18,iw=W-L-Rr,ih=H-T-B;
+  const t0=parseKey(R[0].date).getTime(),t1=Math.max(parseKey(end).getTime()+864e5,t0+864e5),x=t=>L+(t-t0)/(t1-t0)*iw;
+  const mx=Math.max(...R.map(doseMcg))*1.25,y=v=>T+ih*(1-v/mx);
+  let band="";if(a){const xa=x(Math.max(parseKey(a).getTime(),t0)),xb=x(Math.min(parseKey(end).getTime()+864e5,t1));if(xb>xa)band=`<rect x="${xa.toFixed(1)}" y="${T-6}" width="${(xb-xa).toFixed(1)}" height="${ih+6}" fill="var(--accent)" opacity=".08"/>`}
+  let segs="",links="",lbl="",pe=-1;
+  R.forEach((r,i)=>{const xs=x(parseKey(r.date).getTime()),xe=x(Math.min(parseKey(r.to||end).getTime()+864e5,t1)),yy=y(doseMcg(r));
+    segs+=`<path d="M${xs.toFixed(1)} ${yy.toFixed(1)}H${xe.toFixed(1)}" stroke="var(--accent)" stroke-width="3" stroke-linecap="round"/>`;
+    const nx=R[i+1];if(nx&&r.to&&shiftKey(r.to,1)===nx.date)links+=`<path d="M${xe.toFixed(1)} ${yy.toFixed(1)}V${y(doseMcg(nx)).toFixed(1)}" stroke="var(--muted)" stroke-dasharray="2 2"/>`;
+    const c=r.chg&&(r.chg.kind==="up"||r.chg.kind==="down")?"var(--prot)":"var(--ink)",tw=(fmtDose(r).length+2)*5,rt=xs+2+tw>W-Rr;
+    const lx=rt?W-Rr-tw:xs+2,ly=lx<pe+3?yy+12:yy-5;if(ly<yy)pe=lx+tw;
+    lbl+=`<text x="${(rt?W-Rr:xs+2).toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="${rt?"end":"start"}" font-size="8.5" font-weight="700" fill="${c}">${r.chg&&r.chg.kind==="up"?"▲ ":r.chg&&r.chg.kind==="down"?"▼ ":""}${esc(fmtDose(r))}</text>`});
+  const dl=[[t0,"start"],[t1-864e5,"end"]].map(([t,an])=>`<text x="${(an==="start"?L:W-Rr)}" y="${H-5}" text-anchor="${an}" font-size="9" fill="var(--muted)">${new Date(t).toLocaleDateString("tr-TR",{day:"numeric",month:"short",year:"2-digit"})}</text>`).join("");
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="İlaç dozu seyri">${band}<line x1="${L}" x2="${W-Rr}" y1="${T+ih}" y2="${T+ih}" stroke="var(--line)"/>${links}${segs}${lbl}${dl}</svg>`}
 function labStatus(l){if(l.lo!=null&&l.v<l.lo)return["low","Düşük"];if(l.hi!=null&&l.v>l.hi)return["high","Yüksek"];return["ok","Normal"]}
 const labName=l=>l.code==="OTHER"?(l.name||"Diğer"):LABS[l.code]?LABS[l.code].n:l.code;
 const numTR=(v,d)=>v==null||isNaN(v)?"–":(+v).toLocaleString("tr-TR",{maximumFractionDigits:d??2});
@@ -1306,7 +1337,7 @@ function labChart(L,code){if(L.length<2)return "";
   const band=`<rect x="${Lp}" y="${y(hi!=null?Math.min(hi,mx):mx).toFixed(1)}" width="${iw}" height="${(y(lo!=null?Math.max(lo,mn):mn)-y(hi!=null?Math.min(hi,mx):mx)).toFixed(1)}" fill="var(--good)" opacity=".10"/>`;
   const ticks=[mn,(mn+mx)/2,mx].map(v=>`<text x="${Lp-4}" y="${(y(v)+3).toFixed(1)}" text-anchor="end" font-size="9" fill="var(--muted)">${numTR(v,v<10?1:0)}</text><line x1="${Lp}" x2="${W-Rr}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}" stroke="var(--line)"/>`).join("");
   const pts=L.map(l=>[x(parseKey(l.date).getTime()),y(l.v),l]);
-  let dm="";if(code==="TSH")dosesL().filter(d=>d.date>=L[0].date&&d.date<=L[L.length-1].date).forEach(d=>{const xx=x(parseKey(d.date).getTime());dm+=`<line x1="${xx.toFixed(1)}" x2="${xx.toFixed(1)}" y1="${T}" y2="${T+ih}" stroke="var(--prot)" stroke-dasharray="3 3"/><text x="${(xx+2).toFixed(1)}" y="${T+8}" font-size="8.5" fill="var(--prot)">${d.dose} mcg</text>`});
+  let dm="";if(code==="TSH")dosesL().filter(d=>d.date>=L[0].date&&d.date<=L[L.length-1].date).forEach(d=>{const xx=x(parseKey(d.date).getTime());dm+=`<line x1="${xx.toFixed(1)}" x2="${xx.toFixed(1)}" y1="${T}" y2="${T+ih}" stroke="var(--prot)" stroke-dasharray="3 3"/><text x="${(xx+2).toFixed(1)}" y="${T+8}" font-size="8.5" fill="var(--prot)">${esc(fmtDose(d))}</text>`});
   const lab=[pts[0],pts[pts.length-1]].map((p,i)=>`<text x="${p[0].toFixed(1)}" y="${H-6}" text-anchor="${i?"end":"start"}" font-size="9" fill="var(--muted)">${parseKey(p[2].date).toLocaleDateString("tr-TR",{day:"numeric",month:"short",year:"2-digit"})}</text>`).join("");
   return `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="${esc(labName(L[0]))} değişimi">${band}${ticks}${dm}<path d="${pts.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1)).join("")}" fill="none" stroke="var(--accent)" stroke-width="2.2"/>${pts.map(p=>{const st=labStatus(p[2])[0];return `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3.8" fill="${st==="ok"?"var(--accent)":"var(--bad)"}"/>`}).join("")}${lab}</svg>`}
 function labGroups(){const G={};labsL().forEach(l=>{const key=l.code==="OTHER"?"OTHER:"+(l.name||""):l.code;(G[key]=G[key]||[]).push(l)});Object.values(G).forEach(a=>a.sort((x,y)=>x.date<y.date?-1:1));
@@ -1391,21 +1422,41 @@ function openSuppEdit(id){const s=id?suppsL().find(x=>x.id===id):null;
       const o={id:s?s.id:uid(),name:n,time:$("#spT").value||"13:00",lag:+$("#spL").value,on:$("#spOn").checked,note};
       if(s)Object.assign(s,o);else suppsL().push(o);saveSettings();pushReminder();sc.remove();toast("Takviye kaydedildi");render()}});
 }
-function vDoses(){const L=dosesL().slice().sort((a,b)=>a.date<b.date?1:-1),cur=doseOn(todayKey());
-  return `<section class="card med"><div class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="8" width="18" height="8" rx="4" transform="rotate(-35 12 12)"/><path d="m9.5 8.5 5 7"/></svg></div><div class="txt"><b>${esc(S.settings.medName)}</b><div class="small muted">${cur?`Şu anki doz: <b style="color:var(--ink)">${cur} mcg</b>`:"Henüz doz girilmedi"}</div></div><button class="btn sm primary" id="doseAdd">${cur?"Doz değişti":"Doz gir"}</button></section>
-  ${L.length?`<section class="card"><h2>Doz geçmişi</h2>${L.map((d,i)=>{const nx=L[i-1];return `<div class="entry"><div class="n"><span class="nm">${d.dose} mcg</span><small>${parseKey(d.date).toLocaleDateString("tr-TR",{day:"numeric",month:"long",year:"numeric"})} – ${nx?parseKey(shiftKey(nx.date,-1)).toLocaleDateString("tr-TR",{day:"numeric",month:"long",year:"numeric"}):"bugün"}${d.note?" · "+esc(d.note):""}</small></div><button class="x" data-ddel="${d.id}" aria-label="Sil">×</button></div>`}).join("")}</section>`:""}
-  <p class="small muted" style="margin:0">Doz değişiklikleri TSH grafiğinde ve doktor raporunda gösterilir; böylece doz ile tahliller arasındaki ilişki görülür.</p>`}
-function openDoseAdd(){const sc=document.createElement("div");sc.className="scrim";
-  sc.innerHTML=`<div class="sheet" role="dialog" aria-modal="true" aria-label="Doz"><h2 style="font-size:18px">İlaç dozu</h2>
-   <div class="trow"><div class="field"><label for="dsD">Başlangıç tarihi</label><input id="dsD" type="date" value="${todayKey()}"></div><div class="field"><label for="dsV">Doz (mcg)</label><input id="dsV" type="number" inputmode="decimal" placeholder="75" value="${doseOn(todayKey())||""}"></div></div>
-   <div class="chips">${[25,50,75,88,100,112,125,137,150].map(v=>`<button class="chip" data-dsv="${v}">${v}</button>`).join("")}</div>
-   <div class="field"><label for="dsN">Not (isteğe bağlı)</label><input id="dsN" placeholder="Örn. hafta sonu 1,5 tablet"></div>
+function vDoses(){const R=doseRanges(),L=R.slice().reverse(),cur=doseOn(todayKey()),last=R[R.length-1];
+  const ld=k=>parseKey(k).toLocaleDateString("tr-TR",{day:"numeric",month:"long",year:"numeric"});
+  const sub=cur?`Şu an <b style="color:var(--ink)">${esc(fmtDose(cur))}</b> · ${ld(cur.date)} tarihinden beri`:last&&last.to&&last.to<todayKey()?`Son kullanım ${ld(last.to)} tarihinde bitti`:last?`${ld(last.date)} tarihinde başlayacak`:"Henüz doz girilmedi";
+  const ch=doseChart(R);
+  return `<section class="card med"><div class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="8" width="18" height="8" rx="4" transform="rotate(-35 12 12)"/><path d="m9.5 8.5 5 7"/></svg></div><div class="txt"><b>${esc(cur?doseMed(cur):S.settings.medName)}</b><div class="small muted">${sub}</div></div><button class="btn sm primary" id="doseAdd">${R.length?"Doz değişti":"Doz gir"}</button></section>
+  ${ch?`<section class="card"><h2>Doz seyri</h2>${ch}<p class="small muted" style="margin:4px 0 0">▲ artış, ▼ azalış. Kesikli çizgiler doz değişikliğini gösterir.</p></section>`:""}
+  ${L.length?`<section class="card"><h2>Kullanım dönemleri</h2>${L.map(r=>{const to=r.to||todayKey(),n=r.date<=todayKey()?dayN(r.date,to<todayKey()?to:todayKey()):0;
+    const c=r.chg&&r.chg.kind!=="same"?`<span class="tag" style="background:var(--sunk);color:var(--prot)">${esc(r.chg.t)}</span>`:"";
+    return `<div class="entry"><div class="n"><span class="nm" style="white-space:nowrap">${esc(doseMed(r))} · ${esc(fmtDose(r))}</span>${c}<small>${ld(r.date)} – ${r.to?ld(r.to):"devam ediyor"}${n?` · ${n} gün`:""}${r.note?" · "+esc(r.note):""}</small></div><button class="btn sm ghost" data-dedit="${r.id}">Düzenle</button><button class="x" data-ddel="${r.id}" aria-label="Sil">×</button></div>`}).join("")}</section>`:""}
+  <p class="small muted" style="margin:0">Doz değişiklikleri TSH grafiğinde ve doktor raporunda gösterilir; böylece doz ile tahliller ve kilo arasındaki ilişki görülür.</p>`}
+function openDoseAdd(id){const ed=id?dosesL().find(x=>x.id===id):null,cur=doseOn(todayKey()),base=ed||cur||doseRanges().slice(-1)[0];
+  let unit=base?doseUnit(base):"mcg";
+  const names=[...new Set([S.settings.medName,...dosesL().map(doseMed)].filter(Boolean))];
+  const CH={mcg:[25,50,75,88,100,112,125,137,150],mg:[0.5,1,2.5,5,10,20,25,50,100]};
+  const chips=()=>CH[unit].map(v=>`<button class="chip" data-dsv="${v}">${numTR(v)}</button>`).join("");
+  const sc=document.createElement("div");sc.className="scrim";
+  sc.innerHTML=`<div class="sheet" role="dialog" aria-modal="true" aria-label="Doz"><h2 style="font-size:18px">${ed?"Dozu düzenle":"İlaç dozu"}</h2>
+   <div class="field"><label for="dsM">İlacın adı</label><input id="dsM" list="dsML" value="${esc(base?doseMed(base):S.settings.medName||"")}" placeholder="Levotiron, Euthyrox, Tefor…"><datalist id="dsML">${names.map(n=>`<option value="${esc(n)}">`).join("")}</datalist></div>
+   <div class="trow"><div class="field"><label for="dsV">Doz</label><input id="dsV" type="number" inputmode="decimal" step="any" placeholder="${unit==="mg"?"1":"75"}" value="${ed?ed.dose:cur?cur.dose:""}"></div><div class="field" style="max-width:110px"><label for="dsU">Birim</label><select id="dsU"><option value="mcg">mcg</option><option value="mg">mg</option></select></div></div>
+   <div class="chips" id="dsC">${chips()}</div>
+   <div class="trow"><div class="field"><label for="dsD">Başlangıç</label><input id="dsD" type="date" value="${ed?ed.date:todayKey()}"></div><div class="field"><label for="dsE">Bitiş (isteğe bağlı)</label><input id="dsE" type="date" value="${ed&&ed.end?ed.end:""}"></div></div>
+   <p class="small muted" style="margin:0">Bitiş boş kalırsa ilaç hâlâ kullanılıyor sayılır. Yeni doz girdiğinde önceki dönem bir gün öncesinde kendiliğinden kapanır.</p>
+   <div class="field"><label for="dsN">Not (isteğe bağlı)</label><input id="dsN" value="${ed?esc(ed.note||""):""}" placeholder="Örn. hafta sonu 1,5 tablet"></div>
    <div class="row"><button class="btn ghost" id="dsCancel">Vazgeç</button><button class="btn primary" id="dsOk">Kaydet</button></div></div>`;
   document.body.appendChild(sc);
+  $("#dsU").value=unit;$("#dsU").addEventListener("change",e=>{unit=e.target.value;$("#dsC").innerHTML=chips()});
   sc.addEventListener("click",e=>{const b=e.target.closest("button");if(e.target===sc||(b&&b.id==="dsCancel")){sc.remove();return}if(!b)return;
     if(b.dataset.dsv){$("#dsV").value=b.dataset.dsv}
-    if(b.id==="dsOk"){const v=parseFloat(($("#dsV").value||"").replace(",","."));if(!(v>0&&v<1000)){$("#dsV").focus();return}
-      const dt=$("#dsD").value||todayKey();S.settings.doses=dosesL().filter(x=>x.date!==dt);dosesL().push({id:uid(),date:dt,dose:v,note:$("#dsN").value.trim()});saveSettings();sc.remove();toast("Doz kaydedildi");render()}})}
+    if(b.id==="dsOk"){const v=parseFloat(($("#dsV").value||"").replace(",","."));if(!(v>0&&v<100000)){$("#dsV").focus();return}
+      const dt=$("#dsD").value||todayKey(),end=$("#dsE").value||"";if(end&&end<dt){toast("Bitiş, başlangıçtan önce olamaz");$("#dsE").focus();return}
+      const med=$("#dsM").value.trim()||S.settings.medName||"İlacım";
+      S.settings.doses=dosesL().filter(x=>x.date!==dt&&!(ed&&x.id===ed.id));
+      const o={id:ed?ed.id:uid(),med,date:dt,dose:v,unit,note:$("#dsN").value.trim()};if(end)o.end=end;dosesL().push(o);
+      const now=doseOn(todayKey());if(now&&doseMed(now)!==S.settings.medName){S.settings.medName=doseMed(now);pushReminder()}
+      saveSettings();sc.remove();toast("Doz kaydedildi");render()}})}
 /* Sık yenenler ve favoriler */
 function quickFoods(){
   const ks=Object.keys(S.days).sort().reverse(),seen=new Map(),cnt=new Map(),lim=shiftKey(todayKey(),-60);
@@ -1638,7 +1689,7 @@ function metrics(keys){
   const a0=keys[0],b0=keys[keys.length-1];
   M.supp=suppsL().map(sp=>{let taken=0,close=0;keys.forEach(k=>{const D=S.days[k];const at=D&&D.sup&&D.sup[sp.id];if(!at)return;taken++;if(D.med){const m=toMin(D.med.at),t=toMin(at);if(t>=m&&t<m+(+sp.lag||30))close++}});return{sp,taken,close}});
   M.labs=labsL().filter(l=>l.date>=a0&&l.date<=b0);
-  M.doseEnd=doseOn(b0);M.doseStart=doseOn(a0);M.doseChanges=dosesL().filter(d=>d.date>a0&&d.date<=b0).sort((x,y)=>x.date<y.date?-1:1);
+  M.doseEnd=doseOn(b0);M.doseStart=doseOn(a0);M.doseChanges=doseRanges().filter(d=>d.date>a0&&d.date<=b0);M.doseStops=doseRanges().filter(d=>d.end&&d.to===d.end&&d.end>=a0&&d.end<b0);
   return M}
 const topN=(o,n)=>Object.entries(o).sort((x,y)=>y[1]-x[1]).slice(0,n).map(x=>x[0]);
 const nf=(v,d=0)=>v==null||isNaN(v)?"–":(+v).toLocaleString("tr-TR",{minimumFractionDigits:d,maximumFractionDigits:d});
@@ -1689,7 +1740,8 @@ function evaluate2(C,P,hasPrev){
     if(hasPrev&&P.A.n)t+=` Önceki dönem: ${P.A.harmCount} kez.`;add(A.harmCount>(hasPrev?P.A.harmCount:0)?"warn":A.harmCount?"info":"good",t)}
   if(C.fl.alcohol.size||(hasPrev&&P.fl.alcohol.size))add(C.fl.alcohol.size?"warn":"good",`Alkol: ${C.fl.alcohol.size} gün, ${C.alcN} kez${hasPrev?` (önceki dönem ${P.fl.alcohol.size} gün)`:""}.`);
   if(C.fl.iodine.size)add("info",`${C.fl.iodine.size} gün iyot içeriği yüksek yiyecek (${topN(C.flNames.iodine,3).join(", ")}).`);
-  if(C.doseChanges.length)add("info",`Dönem içinde doz değişti: ${C.doseChanges.map(d=>`${fmtShort(d.date)} → ${d.dose} mcg`).join(", ")}${C.doseStart?` (dönem başı ${C.doseStart} mcg)`:""}.`);
+  if(C.doseChanges.length)add("info",`Dönem içinde ilaç/doz değişti: ${C.doseChanges.map(d=>`${fmtShort(d.date)} → ${fmtDoseFull(d)}${d.chg&&d.chg.kind!=="same"?` (${d.chg.t})`:""}`).join(", ")}${C.doseStart?` (dönem başı ${fmtDoseFull(C.doseStart)})`:""}.`);
+  C.doseStops.forEach(d=>{if(!C.doseChanges.some(x=>x.date===shiftKey(d.end,1)))add("info",`${fmtDoseFull(d)} ${fmtShort(d.end)} tarihinde bırakıldı.`)});
   const keyLabs=["TSH","FT4","FT3","TPO"];keyLabs.forEach(code=>{const L=labsL().filter(l=>l.code===code&&l.date<=C.keys[C.keys.length-1]).sort((x,y)=>x.date<y.date?-1:1);if(!L.length)return;const l=L[L.length-1],pv=L.length>1?L[L.length-2]:null,[st,tx]=labStatus(l);
     if(l.date<C.keys[0]&&!pv)return;add(st==="ok"?"good":"warn",`Son ${LABS[code].n}: ${numTR(l.v)} ${l.u} (${fmtShort(l.date)}, ${tx.toLocaleLowerCase("tr-TR")})${pv?`; önceki ${numTR(pv.v)} (${fmtShort(pv.date)})`:""}.`)});
   if(C.sym._days){const d=hasPrev&&P.sym._avg!=null?C.sym._avg-P.sym._avg:null;const worst=SYMS.filter(([id])=>C.sym[id].avg!=null).sort((x,y)=>C.sym[y[0]].avg-C.sym[x[0]].avg).slice(0,3).filter(([id])=>C.sym[id].avg>=1);
@@ -1708,6 +1760,14 @@ function labsSection(a,b){
   return `<section><h2>Tahliller</h2><div class="${ch?"two":""}" style="${ch?"grid-template-columns:1.35fr 1fr":""}"><table class="trend lt"><thead><tr><th>Tahlil / referans</th><th colspan="4">Son sonuçlar (eskiden yeniye)</th><th>Son değişim</th></tr></thead><tbody>${rows}</tbody></table>
    ${ch?`<div><b style="font-size:9pt">TSH ve ilaç dozu</b>${ch}<p class="cap">Yeşil alan referans aralığı, mavi çizgiler doz değişikliği.</p></div>`:""}</div>
    <p class="cap">Kırmızı değerler referans dışı; vurgulu hücreler rapor dönemine ait.</p></section>`}
+function doseSection(a,b){const R=doseRanges().filter(r=>r.date<=b);if(!R.length)return"";
+  const ld=k=>parseKey(k).toLocaleDateString("tr-TR",{day:"numeric",month:"short",year:"numeric"});
+  const rows=R.slice(-10).map(r=>{const to=r.to&&r.to<b?r.to:b,inP=!r.to||r.to>=a;
+    return `<tr style="${inP?"background:#E7F1EE":""}"><td><b>${esc(doseMed(r))}</b><br>${esc(fmtDose(r))}${r.note?`<br><span class="cap">${esc(r.note)}</span>`:""}</td><td>${ld(r.date)} –<br>${r.to?ld(r.to):"devam ediyor"}</td><td>${dayN(r.date,to)} gün</td><td style="${r.chg&&(r.chg.kind==="up"||r.chg.kind==="down")?"color:var(--prot);font-weight:700":""}">${r.chg?(r.chg.kind==="same"?"aynı doz":esc(r.chg.t)):"ilk kayıt"}</td></tr>`}).join("");
+  const ch=doseChart(R,a,b);
+  return `<section><h2>İlaç kullanım dönemleri</h2><div class="${ch?"two":""}" style="${ch?"grid-template-columns:1.35fr 1fr":""}"><table class="trend lt"><thead><tr><th>İlaç / doz</th><th>Tarih aralığı</th><th>Süre</th><th>Önceki doza göre</th></tr></thead><tbody>${rows}</tbody></table>
+   ${ch?`<div><b style="font-size:9pt">Doz seyri</b>${ch}<p class="cap">Vurgulu alan rapor dönemi; ▲ artış, ▼ azalış.</p></div>`:""}</div>
+   <p class="cap">Vurgulu satırlar rapor dönemine denk gelen kullanım dönemleridir.</p></section>`}
 function doctorHTML(a,b,notes,withDaily){
   const st=S.settings,len=keysBetween(a,b).length,pa=shiftKey(a,-len),pb=shiftKey(a,-1),fk=firstKey();
   const C=metrics(keysBetween(a,b)),P=metrics(keysBetween(pa,pb)),hasPrev=pb>=fk&&P.tracked>0,A=C.A;
@@ -1718,6 +1778,8 @@ function doctorHTML(a,b,notes,withDaily){
   const P_=hasPrev?P:{A:{}};
   const rows=[
     `<tr class="grp"><th colspan="4">İlaç (${esc(st.medName)}, plan ${st.medTime})</th></tr>`,
+    (()=>{const pv=hasPrev?P.doseEnd:null,cv=C.doseEnd;if(!pv&&!cv)return"";const ch=doseChange(pv,cv);
+      return `<tr><th>İlaç ve doz (dönem sonu)</th><td style="white-space:normal">${pv?esc(fmtDoseFull(pv)):"–"}</td><td style="white-space:normal"><b>${cv?esc(fmtDoseFull(cv)):"–"}</b></td><td style="white-space:normal;color:var(--prot);font-weight:700">${ch?(ch.kind==="same"?"=":esc(ch.t)):""}</td></tr>`})(),
     cmpRow("Alınan gün",hasPrev?P.taken:null,C.taken,"high",i0,"gün"),
     cmpRow("Atlanan gün",hasPrev?P.missed:null,C.missed,"low",i0,"gün"),
     hasPrev&&P.tAvg!=null||C.tAvg!=null?cmpText("Ortalama alma saati",hasPrev&&P.tAvg!=null?hm(P.tAvg):"–",C.tAvg!=null?hm(C.tAvg):"–"):"",
@@ -1748,7 +1810,7 @@ function doctorHTML(a,b,notes,withDaily){
   // aylık gidişat
   const months=[];keysBetween(fk<a?fk:a,b).forEach(k=>{const m=k.slice(0,7);let r=months[months.length-1];if(!r||r.m!==m)months.push(r={m,keys:[]});r.keys.push(k)});
   const mrows=months.slice(-12).map(r=>{const M=metrics(r.keys),inP=r.keys[r.keys.length-1]>=a&&r.keys[0]<=b;const [y,mo]=r.m.split("-");
-    return `<tr class="${inP?"cur":""}"><td>${MONTHS[+mo-1]} ${y}</td><td>${M.taken}</td><td class="${M.missed?"bad":""}">${M.missed}</td><td>${M.A.n?i0(M.A.avg):"–"}</td><td>${M.wN?kg(M.wAvg):"–"}</td><td>${M.wN>1?fmtDiff(M.wDelta):"–"}</td><td>${M.A.harmCount||"–"}</td><td>${M.fl.alcohol.size||"–"}</td><td>${M.sym._avg!=null?nf(M.sym._avg,1):"–"}</td><td>${(()=>{const t=labsL().filter(l=>l.code==="TSH"&&l.date>=r.keys[0]&&l.date<=r.keys[r.keys.length-1]).sort((x,y)=>x.date<y.date?-1:1);return t.length?`<span class="${labStatus(t[t.length-1])[0]==="ok"?"":"bad"}">${numTR(t[t.length-1].v)}</span>`:"–"})()}</td><td>${M.A.n}/${M.tracked}</td></tr>`}).join("");
+    return `<tr class="${inP?"cur":""}"><td>${MONTHS[+mo-1]} ${y}</td><td>${M.taken}</td><td class="${M.missed?"bad":""}">${M.missed}</td><td style="white-space:nowrap">${(()=>{const e=r.keys[r.keys.length-1],d=doseOn(e<b?e:b),ch=doseChange(doseOn(shiftKey(r.keys[0],-1)),d),ar=ch?{up:"▲ ",down:"▼ ",switch:"↔ "}[ch.kind]||"":"";return d?ar+esc(fmtDose(d)):"–"})()}</td><td>${M.A.n?i0(M.A.avg):"–"}</td><td>${M.wN?kg(M.wAvg):"–"}</td><td>${M.wN>1?fmtDiff(M.wDelta):"–"}</td><td>${M.A.harmCount||"–"}</td><td>${M.fl.alcohol.size||"–"}</td><td>${M.sym._avg!=null?nf(M.sym._avg,1):"–"}</td><td>${(()=>{const t=labsL().filter(l=>l.code==="TSH"&&l.date>=r.keys[0]&&l.date<=r.keys[r.keys.length-1]).sort((x,y)=>x.date<y.date?-1:1);return t.length?`<span class="${labStatus(t[t.length-1])[0]==="ok"?"":"bad"}">${numTR(t[t.length-1].v)}</span>`:"–"})()}</td><td>${M.A.n}/${M.tracked}</td></tr>`}).join("");
   const css=`:root{--ink:#17231F;--muted:#5C6C66;--line:#D5DED9;--sunk:#EEF2EF;--accent:#23584E;--good:#247545;--warn:#A16207;--bad:#B91C1C;--prot:#2563EB}
   @page{size:A4;margin:13mm 12mm}*{box-sizing:border-box}body{font-family:"Segoe UI",Roboto,"Noto Sans",Arial,sans-serif;color:var(--ink);font-size:9.6pt;line-height:1.4;margin:0;background:#fff}
   h1{font-size:15pt;margin:0;color:var(--accent)}h2{font-size:10.5pt;margin:0 0 5px;color:var(--accent);text-transform:uppercase;letter-spacing:.06em;break-after:avoid;page-break-after:avoid}
@@ -1772,16 +1834,16 @@ function doctorHTML(a,b,notes,withDaily){
   return `<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Tiroid takip raporu ${a} – ${b}</title><style>${css}</style></head><body>
   <div class="hdr"><div><h1>Tiroid takip raporu</h1><div style="margin-top:2px">${st.reportName?`<b>${esc(st.reportName)}</b> · `:""}Haşimato tiroiditi · beslenme, ilaç ve kilo kayıtları</div></div>
    <div class="meta"><span>Rapor dönemi</span><b>${ld(a)} – ${ld(b)} (${len} gün)</b><span>Karşılaştırma</span><b>${hasPrev?`${ld(pa)} – ${ld(pb)}`:"Önceki kayıt yok"}</b><span>Takip başlangıcı</span><b>${ld(fk)}</b>
-   <span>İlaç / plan</span><b>${esc(st.medName)}${C.doseEnd?` ${C.doseEnd} mcg`:""} · ${st.medTime}</b><span>Kalori hedefi</span><b>${st.kcal} kcal/gün</b>${st.goalW?`<span>Hedef kilo</span><b>${kg(+st.goalW)} kg</b>`:""}${st.heightCm?`<span>Boy${bmi?" / VKİ":""}</span><b>${st.heightCm} cm${bmi?" / "+nf(bmi,1):""}</b>`:""}</div></div>
+   <span>İlaç / plan</span><b>${esc(C.doseEnd?fmtDoseFull(C.doseEnd):st.medName)} · ${st.medTime}</b><span>Kalori hedefi</span><b>${st.kcal} kcal/gün</b>${st.goalW?`<span>Hedef kilo</span><b>${kg(+st.goalW)} kg</b>`:""}${st.heightCm?`<span>Boy${bmi?" / VKİ":""}</span><b>${st.heightCm} cm${bmi?" / "+nf(bmi,1):""}</b>`:""}</div></div>
   <section class="flow"><h2>Dönem karşılaştırması</h2><table class="cmp"><thead><tr><th>Ölçüt</th><th>Önceki dönem</th><th>Bu dönem</th><th>Değişim</th></tr></thead><tbody>${rows}</tbody></table>
    <p class="cap">Önceki dönem, rapor dönemiyle aynı uzunlukta hemen önceki aralıktır. Yeşil iyileşme, kırmızı kötüleşme yönündeki değişimi gösterir.</p></section>
   <section><h2>Bu dönemin özeti</h2><ul class="ev">${E.map(x=>`<li class="${x.l}">${esc(x.t)}</li>`).join("")||"<li>Yeterli kayıt yok.</li>"}</ul></section>
+  ${doseSection(a,b)}
   ${labsSection(a,b)}
   ${showHist?`<section><h2>Takip başından bugüne</h2><div class="two"><div><b style="font-size:9pt">Haftalık ortalama kilo</b>${histChart(Hs,a,b,"w")||'<p class="cap">Yeterli kilo ölçümü yok.</p>'}</div><div><b style="font-size:9pt">Haftalık ortalama kalori</b>${histChart(Hs,a,b,"k")}<p class="cap">Yeşil hedefte, kırmızı aşım, sarı çok düşük; kesikli çizgi hedef.</p></div></div></section>`:""}
-  <section><h2>Aylık gidişat</h2><table class="trend"><thead><tr><th>Ay</th><th>İlaç alındı</th><th>Atlandı</th><th>Ort. kcal</th><th>Ort. kilo</th><th>Kilo değ.</th><th>“Uzak dur”</th><th>Alkol gün</th><th>Belirti</th><th>TSH</th><th>Kayıt</th></tr></thead><tbody>${mrows}</tbody></table>
-   <p class="cap">Vurgulu satırlar rapor dönemine denk gelen aylardır. “Kayıt”: yiyecek kaydı olan gün / takip edilen gün.</p></section>
+  <section><h2>Aylık gidişat</h2><table class="trend"><thead><tr><th>Ay</th><th>İlaç alındı</th><th>Atlandı</th><th>Doz</th><th>Ort. kcal</th><th>Ort. kilo</th><th>Kilo değ.</th><th>“Uzak dur”</th><th>Alkol gün</th><th>Belirti</th><th>TSH</th><th>Kayıt</th></tr></thead><tbody>${mrows}</tbody></table>
+   <p class="cap">Vurgulu satırlar rapor dönemine denk gelen aylardır. “Kayıt”: yiyecek kaydı olan gün / takip edilen gün. “Doz”: ay sonundaki doz; ▲ artış, ▼ azalış, ↔ ilaç değişikliği.</p></section>
   <section><h2>Dönem ayrıntıları</h2><table class="kv2"><tbody>
-   ${dosesL().length?`<tr><th>Doz geçmişi</th><td>${dosesL().slice().sort((x,y)=>x.date<y.date?-1:1).filter(d=>d.date<=b).slice(-5).map(d=>`${fmtShort(d.date)}: ${d.dose} mcg`).join(" → ")}</td></tr>`:""}
    ${C.supp.length?`<tr><th>Takviyeler</th><td>${C.supp.map(x=>`${esc(x.sp.name)} (plan ${x.sp.time}, ${x.taken}/${C.tracked} gün)`).join(", ")}</td></tr>`:""}
    ${C.sym._notes.length?`<tr><th>Belirti notları</th><td>${C.sym._notes.slice(-5).map(([k,n])=>`${fmtShort(k)}: ${esc(n)}`).join("; ")}</td></tr>`:""}
    <tr><th>Atlanan ilaç günleri</th><td>${C.missed?C.missedDays.map(sd).join(", "):"Yok"}</td></tr>
@@ -1989,6 +2051,7 @@ $("#view").addEventListener("click",e=>{const b=e.target.closest("button");if(!b
   else if(b.id==="spAdd"){openSuppEdit()}
   else if(b.dataset.spedit){openSuppEdit(b.dataset.spedit)}
   else if(b.id==="doseAdd"){openDoseAdd()}
+  else if(b.dataset.dedit){openDoseAdd(b.dataset.dedit)}
   else if(b.dataset.ddel){if(b.dataset.ok!=="1"){b.dataset.ok="1";b.textContent="Sil?";b.style.width="auto";return}S.settings.doses=dosesL().filter(x=>x.id!==b.dataset.ddel);saveSettings();render()}
   else if(b.id==="medTake"){day(k).med={at:nowHM()};medEdit=false;saveDay(k);toast("İlaç işaretlendi");render()}
   else if(b.id==="medEditB"){medEdit=true;render();setTimeout(()=>$("#medAt")&&$("#medAt").focus(),30)}
