@@ -1,0 +1,834 @@
+<!doctype html>
+<html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>body{margin:0}[hidden]{display:none!important}img{max-width:100%}</style></head><body>
+<title>Tiroid Defterim</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="theme-color" content="#2B6A5E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,700&display=swap">
+<style>
+/* Layout: tek ekranlı mobil uygulama — üstte günün özeti, altta sabit sekme çubuğu */
+:root{
+  --bg:#F1F4F1; --surface:#FFFFFF; --sunk:#E6ECE8; --ink:#17231F; --muted:#5C6C66; --line:#D5DED9;
+  --accent:#2B6A5E; --accent-ink:#FFFFFF; --accent-soft:#D9EAE4;
+  --good:#2F7D4A; --good-soft:#DCEFE2; --warn:#A86A06; --warn-soft:#F7EACD; --bad:#B23A31; --bad-soft:#F6DDDA;
+  --prot:#3D6BB3; --fat:#C07A12; --carb:#7A5BB5;
+  --f-display:"Sora",ui-sans-serif,system-ui,sans-serif;
+  --f-body:"Nunito Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --r:14px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0F1614; --surface:#18221F; --sunk:#111A17; --ink:#E5EEEA; --muted:#93A59F; --line:#2A3833;
+  --accent:#5FB3A2; --accent-ink:#0B1412; --accent-soft:#1E3631;
+  --good:#6CC28A; --good-soft:#1C3324; --warn:#E3B04F; --warn-soft:#3A2E14; --bad:#EE7F75; --bad-soft:#3D1E1B;
+  --prot:#7FA6E8; --fat:#E3A447; --carb:#AE93E6; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F1614; --surface:#18221F; --sunk:#111A17; --ink:#E5EEEA; --muted:#93A59F; --line:#2A3833;
+  --accent:#5FB3A2; --accent-ink:#0B1412; --accent-soft:#1E3631;
+  --good:#6CC28A; --good-soft:#1C3324; --warn:#E3B04F; --warn-soft:#3A2E14; --bad:#EE7F75; --bad-soft:#3D1E1B;
+  --prot:#7FA6E8; --fat:#E3A447; --carb:#AE93E6; color-scheme:dark}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45}
+*{box-sizing:border-box}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.app{max-width:560px;margin:0 auto;min-height:100%;display:flex;flex-direction:column;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px 96px}
+header.top{display:flex;align-items:center;gap:10px;padding-block:6px 14px}
+header.top h1{font-family:var(--f-display);font-size:19px;font-weight:600;margin:0;letter-spacing:-.01em}
+header.top .date{margin-left:auto;color:var(--muted);font-size:13px;text-align:right}
+.logo{width:30px;height:30px;flex:none}
+.view{display:flex;flex-direction:column;gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px}
+.label{font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700}
+h2{font-family:var(--f-display);font-size:16px;font-weight:600;margin:0}
+.num{font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+
+/* Kalori halkası */
+.ring-row{display:flex;gap:16px;align-items:center}
+.ring{width:132px;height:132px;flex:none;position:relative}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring .c{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.ring .big{font-family:var(--f-display);font-size:26px;font-weight:700;line-height:1}
+.ring .sub{font-size:12px;color:var(--muted);margin-top:4px}
+.ring-meta{display:flex;flex-direction:column;gap:6px;min-width:0;flex:1}
+.kv{display:flex;justify-content:space-between;gap:8px;font-size:14px}
+.kv b{font-variant-numeric:tabular-nums}
+.carry{font-size:12.5px;border-radius:8px;padding:6px 8px;background:var(--warn-soft);color:var(--warn)}
+
+/* Makrolar */
+.macros{display:flex;flex-direction:column;gap:12px;margin-top:4px}
+.macro .head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:14px}
+.macro .head span:last-child{font-variant-numeric:tabular-nums;color:var(--muted);font-size:13px}
+.bar{height:8px;border-radius:99px;background:var(--sunk);overflow:hidden;margin-top:5px}
+.bar i{display:block;height:100%;border-radius:99px}
+.left{font-size:12.5px;margin-top:3px;font-variant-numeric:tabular-nums}
+.left.over{color:var(--bad);font-weight:700}
+.left.ok{color:var(--muted)}
+
+/* İlaç */
+.med{display:flex;align-items:center;gap:12px}
+.med .ico{width:40px;height:40px;border-radius:12px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;flex:none}
+.med .txt{flex:1;min-width:0}
+.med.done .ico{background:var(--good-soft);color:var(--good)}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:9px 14px;font-weight:700;font-size:14px}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.ghost{background:transparent}
+.btn.sm{padding:6px 10px;font-size:13px}
+.btn:disabled{opacity:.5;cursor:default}
+.notice{font-size:13px;border-radius:10px;padding:10px 12px;background:var(--accent-soft);color:var(--ink)}
+.notice.warn{background:var(--warn-soft)}
+
+/* Öğün listesi */
+.meal{display:flex;flex-direction:column;gap:2px}
+.meal + .meal{border-top:1px solid var(--line);padding-top:10px;margin-top:10px}
+.meal .mh{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.entry{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:14px}
+.entry .n{flex:1;min-width:0}
+.entry .n small{display:block;color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums}
+.entry .k{font-variant-numeric:tabular-nums;font-weight:700}
+.x{border:0;background:transparent;color:var(--muted);width:30px;height:30px;border-radius:8px;font-size:18px;line-height:1}
+.x:hover{background:var(--sunk);color:var(--bad)}
+
+.entry .tag{font-size:11px;font-weight:700;border-radius:99px;padding:2px 7px;margin-left:6px;white-space:nowrap}
+.entry.st-no .nm{color:var(--bad);font-weight:700}
+.entry.st-no .tag{background:var(--bad-soft);color:var(--bad)}
+.entry.st-care .tag{background:var(--warn-soft);color:var(--warn)}
+.alert{border-radius:var(--r);padding:12px 14px;background:var(--bad-soft);color:var(--bad);font-size:14px;border:1px solid var(--bad)}
+.alert b{display:block;margin-bottom:2px}
+.plan{display:flex;flex-direction:column;gap:0;margin-top:10px}
+.step{display:grid;grid-template-columns:58px 1fr auto;gap:10px;align-items:start;padding:9px 0;border-top:1px solid var(--line)}
+.step:first-child{border-top:0}
+.step .t{font-family:var(--f-display);font-weight:600;font-variant-numeric:tabular-nums;font-size:15px}
+.step .w{font-size:14px;min-width:0}
+.step .w small{display:block;color:var(--muted);font-size:12.5px}
+.step .s{font-size:12px;font-weight:700;border-radius:99px;padding:3px 8px;white-space:nowrap}
+.step .s.done{background:var(--good-soft);color:var(--good)}
+.step .s.wait{background:var(--warn-soft);color:var(--warn)}
+.step .s.next{background:var(--sunk);color:var(--muted)}
+/* Arama */
+.search{position:relative}
+.search input{width:100%;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:13px 14px 13px 42px;font-size:16px}
+.search svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:6px 11px;font-size:13px;font-weight:600}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.results{display:flex;flex-direction:column;gap:8px}
+.food{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 12px 12px 14px;display:flex;gap:10px;align-items:flex-start;position:relative;overflow:hidden}
+.food::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--st)}
+.food .body{flex:1;min-width:0}
+.food .name{font-weight:700}
+.food .why{font-size:13px;color:var(--muted);margin-top:2px}
+.food .nut{font-size:12px;color:var(--muted);margin-top:4px;font-variant-numeric:tabular-nums}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;border-radius:99px;padding:3px 9px;white-space:nowrap}
+.st-ok{--st:var(--good)} .st-ok .pill{background:var(--good-soft);color:var(--good)}
+.st-care{--st:var(--warn)} .st-care .pill{background:var(--warn-soft);color:var(--warn)}
+.st-no{--st:var(--bad)} .st-no .pill{background:var(--bad-soft);color:var(--bad)}
+.add{border:0;background:var(--accent-soft);color:var(--accent);width:36px;height:36px;border-radius:10px;font-size:22px;font-weight:700;flex:none}
+.empty{text-align:center;color:var(--muted);padding:20px 8px;font-size:14px}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12.5px;color:var(--muted)}
+.legend span{display:inline-flex;gap:6px;align-items:center}
+.legend i{width:10px;height:10px;border-radius:3px;display:inline-block}
+
+/* Sheet */
+.scrim{position:fixed;inset:0;background:rgba(10,18,16,.45);z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--surface);width:100%;max-width:560px;border-radius:20px 20px 0 0;
+  padding:18px max(18px,env(safe-area-inset-right,0px)) calc(18px + env(safe-area-inset-bottom,0px)) max(18px,env(safe-area-inset-left,0px));
+  display:flex;flex-direction:column;gap:14px;max-height:90vh;overflow:auto}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:13px;font-weight:700;color:var(--muted)}
+.field input,.field select{border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:11px 12px;font-size:16px;width:100%}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.row > *{flex:1;min-width:120px}
+.seg{display:flex;background:var(--sunk);border-radius:10px;padding:3px;gap:3px}
+.seg button{flex:1;border:0;background:transparent;border-radius:8px;padding:8px 4px;font-size:13px;font-weight:700;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.preview{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;text-align:center}
+.preview div{background:var(--bg);border-radius:10px;padding:8px 4px}
+.preview b{display:block;font-family:var(--f-display);font-size:16px;font-variant-numeric:tabular-nums}
+.preview span{font-size:11px;color:var(--muted)}
+
+/* Geçmiş */
+.cal-head{display:flex;align-items:center;gap:8px}
+.cal-head h2{flex:1;text-align:center}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:10px}
+.cal .dow{font-size:11px;color:var(--muted);text-align:center;font-weight:700}
+.cal .d{aspect-ratio:1;max-width:100%;border-radius:9px;border:0;background:var(--sunk);font-size:13px;font-weight:700;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-variant-numeric:tabular-nums;color:var(--muted)}
+.cal .d.ok{background:var(--good-soft);color:var(--good)}
+.cal .d.over{background:var(--bad-soft);color:var(--bad)}
+.cal .d.under{background:var(--warn-soft);color:var(--warn)}
+.cal .d.today{outline:2px solid var(--accent);outline-offset:-2px}
+.cal .d.sel{background:var(--ink);color:var(--bg)}
+.cal .d .dot{width:5px;height:5px;border-radius:50%;background:currentColor;opacity:.8}
+.cal .d .dot.no{opacity:0}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.stat{background:var(--bg);border-radius:12px;padding:12px}
+.stat b{display:block;font-family:var(--f-display);font-size:20px;font-variant-numeric:tabular-nums}
+.chart{width:100%;height:auto;display:block}
+
+/* Alt sekmeler */
+nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:10;background:var(--surface);border-top:1px solid var(--line);
+  padding:6px max(8px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px))}
+nav.tabs .in{max-width:560px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+nav.tabs button{border:0;background:transparent;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0;font-size:11.5px;font-weight:700;color:var(--muted);border-radius:10px}
+nav.tabs button[aria-current="page"]{color:var(--accent);background:var(--accent-soft)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:14px;font-weight:600;z-index:30;max-width:calc(100% - 32px)}
+.sync{font-size:11.5px;color:var(--muted)}
+@media (prefers-reduced-motion:no-preference){.bar i,.ring circle{transition:all .4s ease}}
+</style>
+
+<div class="app">
+  <header class="top">
+    <svg class="logo" viewBox="0 0 32 32" aria-hidden="true"><path fill="var(--accent)" d="M16 9c-2-4-7-6-10-4s-3 9 0 13 7 5 9 3c1-1 1-3 1-4 0 1 0 3 1 4 2 2 6 1 9-3s3-11 0-13-8 0-10 4z"/><rect x="15" y="7" width="2" height="16" rx="1" fill="var(--accent-ink)" opacity=".7"/></svg>
+    <h1>Tiroid Defterim</h1>
+    <div class="date"><div id="hdrDate"></div><div class="sync" id="sync">Bu cihazda kayıtlı</div></div>
+  </header>
+  <main id="view" class="view"></main>
+</div>
+
+<nav class="tabs" aria-label="Bölümler"><div class="in">
+  <button data-tab="today" aria-current="page"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Bugün</button>
+  <button data-tab="search"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Ara</button>
+  <button data-tab="history"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Geçmiş</button>
+  <button data-tab="settings"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>Ayarlar</button>
+</div></nav>
+
+<script>
+/* ---------- Besin veritabanı (100 g başına: kcal, protein, yağ, karbonhidrat) ----------
+   d: ok = yiyebilirsin, care = dikkatli/ölçülü ye, no = uzak dur
+   Kategoriler: sebze, meyve, bakliyat, tahil, protein, sut, kuruyemis, icecek, diger */
+const F=(n,cat,k,p,f,c,d,why,por,pl,al)=>({n,cat,k,p,f,c,d,why,por,pl,al:al||""});
+const FOODS=[
+// Sebzeler
+F("Ispanak","sebze",23,2.9,.4,3.6,"ok","Demir ve folat kaynağı. Demir içeriği nedeniyle ilaçtan en az 4 saat sonra ye.",150,"1 kase"),
+F("Domates","sebze",18,.9,.2,3.9,"ok","Antioksidan zengini, rahatça tüketebilirsin.",120,"1 orta"),
+F("Salatalık","sebze",15,.7,.1,3.6,"ok","Düşük kalorili, rahatça tüketebilirsin.",120,"1 orta"),
+F("Kabak","sebze",17,1.2,.3,3.1,"ok","Hafif ve sindirimi kolay.",200,"1 porsiyon"),
+F("Patlıcan","sebze",25,1,.2,5.9,"ok","Uygun. Kızartma yerine közleme veya fırın tercih et.",200,"1 porsiyon"),
+F("Biber (yeşil)","sebze",20,.9,.2,4.6,"ok","C vitamini kaynağı.",50,"2 adet"),
+F("Kırmızı biber","sebze",31,1,.3,6,"ok","C vitamini ve antioksidan kaynağı.",100,"1 adet"),
+F("Havuç","sebze",41,.9,.2,9.6,"ok","A vitamini öncüsü, uygun.",80,"1 orta"),
+F("Marul","sebze",15,1.4,.2,2.9,"ok","Rahatça tüketebilirsin.",100,"1 kase"),
+F("Roka","sebze",25,2.6,.7,3.7,"care","Turpgillerden. Bol miktarda çiğ yerine ölçülü tüket.",30,"1 avuç",["rokka"]),
+F("Brokoli","sebze",34,2.8,.4,6.6,"care","Turpgillerden (guatrojen). Pişmiş halde ölçülü porsiyon sorun değil; her gün bol çiğ yeme.",150,"1 porsiyon"),
+F("Karnabahar","sebze",25,1.9,.3,5,"care","Turpgillerden. Pişmiş halde ölçülü tüket.",150,"1 porsiyon"),
+F("Beyaz lahana","sebze",25,1.3,.1,5.8,"care","Turpgillerden. Çiğ ve çok miktarda yerine pişmiş ve ölçülü tüket.",150,"1 porsiyon",["lahana"]),
+F("Kırmızı lahana","sebze",31,1.4,.2,7.4,"care","Turpgillerden. Pişmiş ve ölçülü tüket.",100,"1 porsiyon"),
+F("Brüksel lahanası","sebze",43,3.4,.3,9,"care","Turpgillerden. Pişmiş ve ölçülü tüket.",100,"1 porsiyon"),
+F("Kara lahana","sebze",35,2.9,1.5,4.4,"care","Turpgillerden. Pişmiş ve ölçülü tüket; çiğ smoothie'lere bol koyma.",150,"1 porsiyon",["kale"]),
+F("Turp","sebze",16,.7,.1,3.4,"care","Turpgillerden. Az miktar sorun değil.",50,"birkaç adet"),
+F("Şalgam","sebze",28,.9,.1,6.4,"care","Turpgillerden. Ölçülü tüket.",100,"1 porsiyon"),
+F("Soğan","sebze",40,1.1,.1,9.3,"ok","Uygun.",50,"yarım orta"),
+F("Sarımsak","sebze",149,6.4,.5,33,"ok","Uygun.",5,"1-2 diş"),
+F("Pırasa","sebze",61,1.5,.3,14,"ok","Uygun.",150,"1 porsiyon"),
+F("Kereviz","sebze",42,1.5,.3,9.2,"ok","Uygun.",150,"1 porsiyon"),
+F("Bamya","sebze",33,1.9,.2,7.5,"ok","Lif kaynağı.",150,"1 porsiyon"),
+F("Taze fasulye","sebze",31,1.8,.2,7,"ok","Uygun.",200,"1 porsiyon"),
+F("Enginar","sebze",47,3.3,.2,10.5,"ok","Lif kaynağı, karaciğer dostu.",120,"1 adet"),
+F("Mantar","sebze",22,3.1,.3,3.3,"ok","Selenyum içerir, uygun.",100,"1 kase"),
+F("Patates (haşlama)","sebze",87,1.9,.1,20,"care","Uygun ama nişastalı; porsiyonu küçük tut, kızartma yerine haşlama/fırın.",150,"1 orta",["patates"]),
+F("Patates kızartması","sebze",312,3.4,15,41,"no","Kızartma ve yüksek yağ; iltihabı ve kiloyu artırabilir.",100,"1 küçük porsiyon"),
+F("Tatlı patates","sebze",86,1.6,.1,20,"ok","Uygun; porsiyon kontrolü yap.",150,"1 orta"),
+F("Pancar","sebze",43,1.6,.2,9.6,"ok","Uygun.",100,"1 orta"),
+F("Semizotu","sebze",20,2,.4,3.4,"ok","Omega-3 içerir, uygun.",100,"1 kase"),
+F("Deniz yosunu (kelp, nori)","sebze",43,1.7,.6,9.6,"no","Çok yüksek iyot içerir; Haşimato'yu alevlendirebilir. Uzak dur.",10,"1 yaprak",["yosun","nori","kelp","wakame"]),
+// Meyveler
+F("Elma","meyve",52,.3,.2,14,"ok","Lif kaynağı, uygun.",180,"1 orta"),
+F("Armut","meyve",57,.4,.1,15,"ok","Uygun.",170,"1 orta"),
+F("Muz","meyve",89,1.1,.3,23,"ok","Uygun; günde 1 tane yeterli.",120,"1 orta"),
+F("Portakal","meyve",47,.9,.1,12,"ok","C vitamini kaynağı.",150,"1 orta"),
+F("Mandalina","meyve",53,.8,.3,13,"ok","Uygun.",80,"1 adet"),
+F("Greyfurt","meyve",42,.8,.1,11,"care","Bazı ilaçlarla etkileşebilir; ilaçlarını doktoruna sor.",200,"yarım"),
+F("Çilek","meyve",32,.7,.3,7.7,"care","Hafif guatrojenik; normal porsiyon sorun değil.",150,"1 kase"),
+F("Yaban mersini","meyve",57,.7,.3,14,"ok","Antioksidan zengini.",100,"1 kase"),
+F("Böğürtlen","meyve",43,1.4,.5,9.6,"ok","Antioksidan zengini.",100,"1 kase"),
+F("Kiraz","meyve",63,1.1,.2,16,"ok","Uygun.",120,"1 kase"),
+F("Üzüm","meyve",69,.7,.2,18,"ok","Şekeri yüksek, porsiyonu küçük tut.",100,"1 küçük salkım"),
+F("Karpuz","meyve",30,.6,.2,7.6,"ok","Uygun.",300,"1 dilim"),
+F("Kavun","meyve",34,.8,.2,8,"ok","Uygun.",200,"1 dilim"),
+F("Şeftali","meyve",39,.9,.3,10,"care","Hafif guatrojenik; normal porsiyon sorun değil.",150,"1 orta"),
+F("Kayısı","meyve",48,1.4,.4,11,"ok","Uygun.",35,"1 adet"),
+F("Erik","meyve",46,.7,.3,11,"ok","Uygun.",70,"1-2 adet"),
+F("Nar","meyve",83,1.7,1.2,19,"ok","Antioksidan zengini.",100,"yarım"),
+F("İncir (taze)","meyve",74,.8,.3,19,"ok","Uygun.",50,"1 adet"),
+F("Kivi","meyve",61,1.1,.5,15,"ok","C vitamini kaynağı.",75,"1 adet"),
+F("Avokado","meyve",160,2,15,8.5,"ok","Sağlıklı yağ; kalorisi yüksek, porsiyon kontrolü yap.",70,"yarım"),
+F("Ananas","meyve",50,.5,.1,13,"ok","Uygun.",150,"1 kase"),
+F("Hurma","meyve",277,1.8,.2,75,"care","Şekeri çok yüksek; 1-2 taneyle sınırla.",20,"2 adet"),
+F("Kuru üzüm","meyve",299,3.1,.5,79,"care","Şekeri yüksek; bir avuçla sınırla.",30,"1 avuç"),
+F("Kuru kayısı","meyve",241,3.4,.5,63,"care","Şekeri yüksek; 3-4 taneyle sınırla.",30,"4 adet"),
+// Bakliyat
+F("Mercimek (pişmiş)","bakliyat",116,9,.4,20,"ok","İyi protein ve lif kaynağı.",200,"1 kase",["kırmızı mercimek","yeşil mercimek"]),
+F("Nohut (pişmiş)","bakliyat",164,8.9,2.6,27,"ok","Protein ve lif kaynağı.",150,"1 kase"),
+F("Kuru fasulye (pişmiş)","bakliyat",127,8.7,.5,23,"ok","Protein ve lif kaynağı.",200,"1 kase",["barbunya"]),
+F("Börülce (pişmiş)","bakliyat",116,7.7,.5,21,"ok","Uygun.",150,"1 kase"),
+F("Bezelye","bakliyat",81,5.4,.4,14,"ok","Uygun.",150,"1 porsiyon"),
+F("Bakla","bakliyat",88,7.9,.6,18,"ok","Uygun.",150,"1 porsiyon"),
+F("Soya fasulyesi","bakliyat",173,17,9,10,"care","Soya ilacın emilimini azaltabilir. Ölçülü ye, ilaçtan en az 4 saat sonra.",100,"1 porsiyon",["soya"]),
+F("Soya sütü","icecek",43,3.3,1.8,3,"care","Soya ilacın emilimini azaltabilir. İlaçtan en az 4 saat sonra iç.",200,"1 su bardağı"),
+F("Tofu","protein",76,8,4.8,1.9,"care","Soya ürünü; ölçülü tüket, ilaçtan 4 saat ayrı.",100,"1 porsiyon"),
+F("Edamame","bakliyat",121,12,5,9,"care","Soya ürünü; ölçülü tüket, ilaçtan 4 saat ayrı.",100,"1 kase"),
+F("Humus","bakliyat",166,7.9,9.6,14,"ok","Uygun; tahini nedeniyle yağı yüksek, porsiyona dikkat.",50,"3 yemek kaşığı"),
+// Tahıllar
+F("Bulgur (pişmiş)","tahil",83,3.1,.2,19,"care","Glüten içerir. Çölyak veya glüten hassasiyetin varsa uzak dur; yoksa ölçülü tüket.",150,"1 kase"),
+F("Pirinç pilavı","tahil",130,2.7,.3,28,"ok","Glütensiz; porsiyonu küçük tut.",150,"1 kase",["pilav"]),
+F("Esmer pirinç","tahil",112,2.3,.8,24,"ok","Glütensiz, lifli.",150,"1 kase"),
+F("Kinoa (pişmiş)","tahil",120,4.4,1.9,21,"ok","Glütensiz, protein kaynağı.",150,"1 kase"),
+F("Karabuğday (pişmiş)","tahil",92,3.4,.6,20,"ok","Glütensiz, uygun.",150,"1 kase"),
+F("Yulaf ezmesi","tahil",389,17,6.9,66,"ok","Lif kaynağı. Glütensiz etiketli olanı tercih et. İlaçla aynı anda yeme.",40,"4 yemek kaşığı",["yulaf"]),
+F("Beyaz ekmek","tahil",265,9,3.2,49,"care","Glüten içerir ve rafine; tam tahıllı tercih et. Çölyak varsa uzak dur.",25,"1 dilim",["ekmek"]),
+F("Tam buğday ekmeği","tahil",247,13,3.4,41,"care","Glüten içerir. Çölyak/hassasiyet yoksa ölçülü tüketebilirsin.",25,"1 dilim"),
+F("Makarna (pişmiş)","tahil",158,5.8,.9,31,"care","Glüten içerir; porsiyonu küçük tut.",150,"1 tabak",["spagetti"]),
+F("Darı","tahil",119,3.5,1,24,"care","Guatrojen içerir; sık ve bol tüketme.",150,"1 kase"),
+F("Mısır","tahil",86,3.3,1.4,19,"ok","Glütensiz.",100,"1 koçan"),
+F("Simit","tahil",275,9,6,47,"care","Glütenli, rafine ve kalorili; ara sıra.",100,"1 adet"),
+F("Börek","tahil",300,8,17,30,"no","Hamur işi, yağlı ve glütenli; sık tüketme.",150,"1 dilim",["poğaça","açma"]),
+// Protein
+F("Yumurta","protein",143,13,9.5,.7,"ok","Selenyum ve protein kaynağı.",50,"1 adet"),
+F("Tavuk göğsü (ızgara)","protein",165,31,3.6,0,"ok","Yağsız protein.",120,"1 porsiyon",["tavuk"]),
+F("Hindi göğsü","protein",135,30,1,0,"ok","Yağsız protein.",120,"1 porsiyon"),
+F("Dana kıyma (az yağlı)","protein",215,26,12,0,"ok","Uygun; az yağlı seç.",100,"1 porsiyon",["kıyma","köfte"]),
+F("Kırmızı et (az yağlı)","protein",190,28,8,0,"ok","Demir ve çinko kaynağı; haftada 2-3 kez.",120,"1 porsiyon",["et","biftek"]),
+F("Kuzu eti","protein",282,25,20,0,"care","Yağı yüksek; ölçülü.",120,"1 porsiyon"),
+F("Somon","protein",208,20,13,0,"ok","Omega-3 ve selenyum kaynağı.",130,"1 porsiyon",["balık"]),
+F("Levrek","protein",124,24,2.6,0,"ok","Selenyum ve protein kaynağı.",150,"1 porsiyon",["balık"]),
+F("Çupra","protein",115,20,3.5,0,"ok","Uygun.",150,"1 porsiyon",["balık"]),
+F("Hamsi","protein",131,20,4.8,0,"ok","Omega-3 kaynağı.",150,"1 porsiyon",["balık"]),
+F("Ton balığı (suda)","protein",116,26,1,0,"ok","Uygun; haftada 1-2 kez (cıva).",80,"1 küçük kutu",["ton"]),
+F("Karides","protein",99,24,.3,.2,"care","İyot içerir; ara sıra ve normal porsiyon sorun değil.",100,"1 porsiyon",["deniz ürünü"]),
+F("Midye","protein",172,24,4.5,7.4,"care","İyot içerir; ara sıra.",100,"10 adet"),
+F("Sucuk","protein",450,20,40,2,"no","İşlenmiş et; yüksek yağ ve tuz, iltihabı artırabilir.",30,"3 dilim",["salam","sosis","pastırma"]),
+// Süt ürünleri
+F("Yoğurt (yarım yağlı)","sut",60,3.5,1.5,4.7,"ok","Probiyotik. Kalsiyum nedeniyle ilaçtan en az 4 saat sonra.",150,"1 kase"),
+F("Kefir","sut",55,3.5,1.5,4.5,"ok","Probiyotik. İlaçtan en az 4 saat sonra.",200,"1 su bardağı"),
+F("Ayran","sut",36,1.7,1.9,2.6,"ok","Uygun; tuzuna dikkat. İlaçtan 4 saat sonra.",200,"1 su bardağı"),
+F("Süt","sut",50,3.4,1.5,4.8,"care","Kalsiyum ilacın emilimini azaltır; ilaçtan en az 4 saat sonra iç. Laktoz hassasiyeti sık görülür.",200,"1 su bardağı"),
+F("Beyaz peynir","sut",264,14,21,4,"ok","Uygun; tuzlu, porsiyona dikkat. İlaçtan 4 saat sonra.",30,"1 kibrit kutusu"),
+F("Lor peyniri","sut",98,11,4.3,3.4,"ok","Az yağlı protein.",50,"2 yemek kaşığı"),
+F("Kaşar peyniri","sut",350,25,27,1.3,"care","Yağı yüksek; ölçülü.",30,"1 dilim"),
+F("Tereyağı","sut",717,.9,81,.1,"care","Doymuş yağ; az miktarla sınırla.",10,"1 tatlı kaşığı"),
+// Kuruyemiş & tohum & yağ
+F("Brezilya cevizi","kuruyemis",659,14,67,12,"ok","Selenyum deposu. Günde 1-2 tane yeterli; fazlası selenyum fazlalığı yapar.",5,"1 adet"),
+F("Ceviz","kuruyemis",654,15,65,14,"ok","Omega-3 kaynağı; günde 2-3 tane.",15,"3 adet"),
+F("Badem","kuruyemis",579,21,50,22,"ok","Uygun; bir avuçla sınırla.",20,"10 adet"),
+F("Fındık","kuruyemis",628,15,61,17,"ok","Uygun; bir avuçla sınırla.",20,"10 adet"),
+F("Fıstık (yer fıstığı)","kuruyemis",567,26,49,16,"care","Hafif guatrojenik ve kalorili; az miktar.",20,"1 avuç"),
+F("Kabak çekirdeği","kuruyemis",559,30,49,11,"ok","Çinko kaynağı.",20,"1 avuç"),
+F("Keten tohumu","kuruyemis",534,18,42,29,"care","Lifli, ilacın emilimini azaltabilir; ilaçtan 4 saat ayrı.",10,"1 yemek kaşığı"),
+F("Chia tohumu","kuruyemis",486,17,31,42,"ok","Lif ve omega-3; ilaçla aynı anda alma.",15,"1 yemek kaşığı"),
+F("Zeytinyağı","diger",884,0,100,0,"ok","En iyi yağ seçeneği; ölçülü kullan.",10,"1 yemek kaşığı"),
+F("Zeytin","diger",115,.8,11,6,"ok","Uygun; tuzlu.",30,"8 adet"),
+F("Tahin","diger",595,17,54,21,"ok","Kalsiyum ve sağlıklı yağ; ölçülü.",15,"1 yemek kaşığı"),
+F("Bal","diger",304,.3,0,82,"care","Şeker; 1 tatlı kaşığıyla sınırla.",10,"1 tatlı kaşığı"),
+F("Pekmez","diger",293,0,.1,74,"care","Şeker; 1 tatlı kaşığıyla sınırla.",15,"1 yemek kaşığı"),
+F("Şeker","diger",387,0,0,100,"no","Kan şekerini dalgalandırır, iltihabı artırabilir.",5,"1 tatlı kaşığı"),
+F("Çikolata (sütlü)","diger",535,7.7,30,59,"no","Şekerli ve yağlı; uzak dur.",25,"2 kare"),
+F("Bitter çikolata (%70+)","diger",598,7.8,43,46,"care","Az miktar (1-2 kare) olabilir.",10,"1 kare"),
+F("Baklava","diger",428,6.7,29,37,"no","Şeker, glüten ve yağ yüksek.",60,"2 dilim",["tatlı","künefe"]),
+F("Cips","diger",536,7,35,53,"no","Kızartma, tuz ve trans yağ.",30,"1 küçük paket"),
+F("Hamburger","diger",295,17,14,24,"no","Fast food: işlenmiş, yağlı ve glütenli.",200,"1 adet",["fast food"]),
+F("Margarin","diger",717,.2,80,.7,"no","Trans yağ riski; zeytinyağı tercih et.",10,"1 tatlı kaşığı"),
+F("İyotlu tuz","diger",0,0,0,0,"care","Normal kullanım yeterli; fazladan iyot takviyesi alma.",1,"1 tutam",["tuz"]),
+// İçecekler
+F("Su","icecek",0,0,0,0,"ok","Bol iç.",200,"1 su bardağı"),
+F("Türk kahvesi","icecek",2,.1,0,.3,"care","Kahve ilacın emilimini azaltır; ilaçtan en az 30-60 dk sonra iç.",65,"1 fincan",["kahve"]),
+F("Filtre kahve","icecek",2,.3,0,0,"care","İlaçtan en az 30-60 dk sonra iç.",240,"1 kupa"),
+F("Siyah çay","icecek",1,0,0,.3,"care","Uygun ama ilaçla aynı anda içme; günde 3-4 bardakla sınırla.",100,"1 çay bardağı",["çay"]),
+F("Yeşil çay","icecek",1,0,0,0,"ok","Antioksidan; ilaçtan 30-60 dk sonra.",200,"1 kupa"),
+F("Bitki çayı (ıhlamur, adaçayı)","icecek",1,0,0,0,"ok","Uygun.",200,"1 kupa",["ıhlamur","adaçayı","papatya"]),
+F("Taze portakal suyu","icecek",45,.7,.2,10,"care","Şekeri yüksek; meyvenin kendisini tercih et. Kalsiyumlu olanları ilaçtan ayır.",200,"1 su bardağı"),
+F("Kola / gazlı içecek","icecek",42,0,0,10.6,"no","Şeker ve katkı maddesi; uzak dur.",330,"1 kutu",["gazoz","asitli"]),
+F("Alkol","icecek",70,0,0,4,"no","Bağışıklığı ve karaciğeri yorar; uzak dur.",150,"1 kadeh",["bira","şarap","rakı"]),
+// Ekmek ve hamur işleri
+F("Lavaş","tahil",275,9,1.2,56,"care","Glüten içerir; çölyak veya glüten hassasiyetin varsa uzak dur, yoksa ölçülü tüket.",50,"1 adet"),
+F("Yufka","tahil",290,8,1.5,60,"care","Glüten içerir; çölyak veya glüten hassasiyetin varsa uzak dur, yoksa ölçülü tüket.",50,"1 yaprak"),
+F("Bazlama","tahil",270,8.5,3,52,"care","Glüten içerir; çölyak veya glüten hassasiyetin varsa uzak dur, yoksa ölçülü tüket.",100,"1 adet"),
+F("Pide ekmeği","tahil",270,9,2,54,"care","Glüten içerir; çölyak veya glüten hassasiyetin varsa uzak dur, yoksa ölçülü tüket.",50,"1 dilim",["ramazan pidesi"]),
+F("Çavdar ekmeği","tahil",259,8.5,3.3,48,"care","Glüten içerir ama beyaz ekmekten lifli. Çölyak varsa uzak dur.",30,"1 dilim"),
+F("Mısır ekmeği","tahil",260,6,6,45,"care","Çoğunlukla buğday unu da karışır; glütensiz değilse dikkat.",50,"1 dilim"),
+F("Glütensiz ekmek","tahil",250,3,5,48,"ok","Glütensiz; porsiyonu küçük tut.",30,"1 dilim"),
+F("Tortilla (buğday)","tahil",310,8,8,50,"care","Glüten içerir; çölyak veya glüten hassasiyetin varsa uzak dur, yoksa ölçülü tüket.",60,"1 adet",["wrap","dürüm ekmeği"]),
+F("Galeta","tahil",400,12,5,75,"care","Glüten içerir; çölyak veya glüten hassasiyetin varsa uzak dur, yoksa ölçülü tüket.",20,"4 adet"),
+F("Kraker","tahil",430,9,12,70,"care","Glüten ve tuz içerir; az miktar.",30,"1 küçük paket"),
+F("Grissini","tahil",410,12,8,70,"care","Glüten içerir; çölyak veya glüten hassasiyetin varsa uzak dur, yoksa ölçülü tüket.",20,"4 çubuk"),
+F("Pirinç patlağı","tahil",387,8,3,81,"ok","Glütensiz; ara öğünde 1-2 tane.",10,"1 adet"),
+F("Mısır gevreği (şekerli)","tahil",380,7,1,85,"no","Şekeri yüksek ve rafine.",30,"1 kase",["corn flakes","gevrek"]),
+F("Granola","tahil",470,10,20,64,"care","Çoğunlukla şekerli; az şekerli olanı seç, porsiyona dikkat.",40,"4 yemek kaşığı",["müsli"]),
+F("Kuskus","tahil",112,3.8,.2,23,"care","Glüten içerir; çölyak veya glüten hassasiyetin varsa uzak dur, yoksa ölçülü tüket.",150,"1 kase"),
+F("Şehriye pilavı","tahil",150,5,3,27,"care","Glüten içerir; çölyak veya glüten hassasiyetin varsa uzak dur, yoksa ölçülü tüket.",150,"1 kase",["arpa şehriye"]),
+F("İrmik","tahil",360,12.7,1,73,"care","Glüten içerir; çölyak veya glüten hassasiyetin varsa uzak dur, yoksa ölçülü tüket.",30,"2 yemek kaşığı"),
+F("Firik pilavı","tahil",120,4,.6,24,"care","Glüten içerir; çölyak veya glüten hassasiyetin varsa uzak dur, yoksa ölçülü tüket.",150,"1 kase",["frik"]),
+F("Pizza","diger",266,11,10,33,"no","Glütenli hamur, işlenmiş et ve yağlı peynir.",250,"2 dilim"),
+F("Tost (kaşarlı)","tahil",290,13,12,32,"care","Glüten ve yağlı peynir; ara sıra.",150,"1 adet"),
+F("Sandviç (tavuklu)","tahil",230,13,8,26,"care","Ekmeği glütenli; tam tahıllı veya glütensiz ekmekle yap.",200,"1 adet"),
+F("Gözleme (peynirli)","tahil",230,9,8,30,"care","Glüten içerir; çölyak veya glüten hassasiyetin varsa uzak dur, yoksa ölçülü tüket.",200,"1 adet"),
+F("Mantı","tahil",220,9,9,25,"care","Glütenli hamur ve tereyağlı sos; porsiyonu küçük tut.",250,"1 tabak"),
+// Döner, kebap ve sokak lezzetleri
+F("Et döner","protein",250,20,17,3,"care","Yağlı ve tuzlu. Ekmeksiz, pilav yerine salatayla ve ayda birkaç kez.",150,"1 porsiyon",["döner"]),
+F("Tavuk döner","protein",200,22,11,3,"care","Et dönerden hafif ama tuzlu ve yağlı; ekmeksiz tercih et.",150,"1 porsiyon",["döner"]),
+F("Dürüm döner (et)","protein",240,13,11,23,"care","Lavaş glütenli, döner yağlı; ara sıra.",300,"1 adet",["dürüm","döner"]),
+F("Dürüm döner (tavuk)","protein",210,14,8,23,"care","Lavaş glütenli; ara sıra.",300,"1 adet",["dürüm","döner"]),
+F("İskender","protein",230,12,15,12,"no","Tereyağı, glütenli pide ve yağlı döner bir arada; çok yağlı.",350,"1 porsiyon",["döner"]),
+F("Lahmacun","tahil",230,10,8,30,"care","Glüten içerir; çölyak veya glüten hassasiyetin varsa uzak dur, yoksa ölçülü tüket.",120,"1 adet"),
+F("Kıymalı pide","tahil",260,11,10,32,"care","Glütenli hamur; yarım porsiyonla sınırla.",250,"yarım pide",["pide"]),
+F("Kaşarlı pide","tahil",280,12,12,32,"care","Glütenli ve yağlı; yarım porsiyon.",250,"yarım pide",["pide"]),
+F("Adana kebap","protein",280,18,22,2,"care","Kuyruk yağı içerir; ekmek yerine közlenmiş sebzeyle ye.",150,"1 şiş",["kebap"]),
+F("Urfa kebap","protein",280,18,22,2,"care","Yağlı; ekmeksiz ve salatayla.",150,"1 şiş",["kebap"]),
+F("Kuzu şiş","protein",210,26,11,0,"ok","Izgara, uygun. Pilav yerine salatayla ye.",150,"1 porsiyon",["şiş kebap","kebap"]),
+F("Tavuk şiş","protein",150,25,5,1,"ok","Izgara yağsız protein; çok uygun.",150,"1 porsiyon",["kebap"]),
+F("Izgara köfte","protein",230,18,16,4,"care","İçine ekmek içi veya galeta katılır (glüten); evde glütensiz yapabilirsin.",150,"5-6 adet",["köfte","inegöl"]),
+F("Çiğ köfte (etsiz)","tahil",180,5,4,32,"care","Bulgurlu (glüten); dürümsüz, marulla ye.",100,"1 porsiyon"),
+F("Kokoreç","protein",300,18,25,1,"no","Çok yağlı sakatat ve tuz.",150,"yarım ekmek"),
+F("Tantuni","protein",200,14,10,14,"care","Lavaşla glütenli; ara sıra.",200,"1 adet"),
+F("Midye dolma","protein",150,7,4,22,"care","İyot içerir; birkaç tane sorun değil.",20,"1 adet"),
+F("Kumpir","diger",160,5,7,20,"no","Tereyağı, kaşar, sucuk ve sos; çok yağlı.",450,"1 adet"),
+F("Falafel","bakliyat",333,13,18,32,"no","Kızartma; fırında yapılanı tercih et.",90,"5 adet"),
+F("Balık ekmek","protein",230,14,9,24,"care","Ekmek glütenli; balığı ızgaraysa sorun yok.",250,"1 adet"),
+// Ev yemekleri
+F("Mercimek çorbası","bakliyat",60,3.5,1.8,8,"ok","Çok uygun.",250,"1 kase"),
+F("Ezogelin çorbası","bakliyat",65,3,2,10,"care","Az bulgur içerir (glüten).",250,"1 kase"),
+F("Tarhana çorbası","tahil",70,3,2,11,"care","Unlu (glüten) ve yoğurtlu.",250,"1 kase"),
+F("Yayla çorbası","sut",60,3,2,8,"ok","Pirinçli ve yoğurtlu; ilaçtan 4 saat sonra.",250,"1 kase"),
+F("Domates çorbası","sebze",45,1.2,2,6,"ok","Uygun; unla bağlandıysa az glüten içerir.",250,"1 kase"),
+F("Tavuk çorbası","protein",45,3.5,1.5,5,"ok","Uygun; şehriyeliyse glüten içerir.",250,"1 kase"),
+F("İşkembe çorbası","protein",75,7,4,3,"care","Yağlı ve tuzlu; ara sıra.",250,"1 kase"),
+F("Etli kuru fasulye","bakliyat",140,8,5,16,"ok","Protein ve lif kaynağı.",250,"1 tabak"),
+F("Etli nohut","bakliyat",150,9,6,16,"ok","Protein ve lif kaynağı.",250,"1 tabak"),
+F("Karnıyarık","sebze",130,5,9,8,"care","Patlıcanı kızartılır; fırında yaparsan uygun.",250,"1 porsiyon"),
+F("İmam bayıldı","sebze",110,1.5,8,9,"care","Bol zeytinyağlı; porsiyona dikkat.",200,"1 porsiyon"),
+F("Zeytinyağlı taze fasulye","sebze",80,2,5,8,"ok","Uygun.",200,"1 porsiyon"),
+F("Yaprak sarma","tahil",160,3,7,22,"ok","Pirinçli, uygun; porsiyona dikkat.",100,"6 adet",["dolma","sarma"]),
+F("Biber dolma (etli)","sebze",120,6,6,10,"ok","Uygun.",250,"2 adet",["dolma"]),
+F("Kabak dolma","sebze",100,5,5,9,"ok","Uygun.",250,"2 adet",["dolma"]),
+F("Lahana sarması","sebze",110,5,5,12,"ok","Lahana pişmiş olduğu için sorun yok.",200,"5 adet",["sarma"]),
+F("Menemen","sebze",95,5,7,4,"ok","Uygun.",200,"1 porsiyon"),
+F("Omlet","protein",154,11,12,.6,"ok","Uygun.",120,"2 yumurtalı"),
+F("Sucuklu yumurta","protein",280,15,23,2,"no","Sucuk işlenmiş ve yağlı.",150,"1 porsiyon"),
+F("Tavuk sote","protein",130,17,6,3,"ok","Uygun.",200,"1 porsiyon"),
+F("Fırın tavuk but","protein",210,26,11,0,"ok","Uygun; derisini çıkarırsan daha hafif.",150,"1 adet"),
+F("Tavuk kanat (fırın)","protein",230,25,14,0,"ok","Fırında uygun; kızartma ise uzak dur.",120,"5 adet"),
+F("Tavuk kızartma","protein",290,22,17,12,"no","Kızartma ve unlu kaplama.",150,"1 porsiyon",["nugget","şinitzel"]),
+F("Et kavurma","protein",330,25,25,0,"care","Yağı çok yüksek; küçük porsiyon.",100,"1 porsiyon",["kavurma"]),
+F("Dana ciğer","protein",135,20,3.6,4,"ok","Demir ve B12 kaynağı; haftada bir porsiyon yeter.",120,"1 porsiyon",["ciğer"]),
+F("Hünkar beğendi","protein",160,9,10,8,"care","Beğendisi unlu ve tereyağlı.",300,"1 porsiyon"),
+F("Musakka","sebze",140,6,9,8,"care","Patlıcanı kızartılırsa yağlı; fırında daha iyi.",250,"1 porsiyon"),
+F("Türlü","sebze",70,2,4,8,"ok","Uygun.",250,"1 porsiyon"),
+F("Fırın sebze","sebze",90,2,5,10,"ok","Uygun.",200,"1 porsiyon"),
+F("Kısır","tahil",150,3.5,5,23,"care","Bulgurlu (glüten).",150,"1 kase"),
+F("Patates püresi","sebze",110,2,4,16,"care","Süt ve tereyağlı; porsiyona dikkat.",150,"1 porsiyon"),
+// Kahvaltılık ve mezeler
+F("Süzme yoğurt","sut",100,9,5,4,"ok","Protein kaynağı. İlaçtan en az 4 saat sonra.",150,"1 kase"),
+F("Labne","sut",230,6,21,4,"care","Yağı yüksek. İlaçtan en az 4 saat sonra.",30,"2 yemek kaşığı",["krem peynir"]),
+F("Tulum peyniri","sut",350,25,27,2,"care","Tuzlu ve yağlı. İlaçtan en az 4 saat sonra.",30,"1 dilim"),
+F("Hellim","sut",320,21,25,2,"care","Tuzlu ve yağlı. İlaçtan en az 4 saat sonra.",50,"2 dilim"),
+F("Mozarella","sut",280,22,20,2,"ok","İlaçtan en az 4 saat sonra.",30,"1 dilim"),
+F("Kaymak","sut",400,4,40,4,"care","Yağı çok yüksek; çok az.",20,"1 yemek kaşığı"),
+F("Cacık","sut",45,2.5,2.5,3.5,"ok","Uygun. İlaçtan en az 4 saat sonra.",200,"1 kase"),
+F("Haydari","sut",140,6,10,6,"ok","Uygun. İlaçtan en az 4 saat sonra.",50,"2 yemek kaşığı"),
+F("Acılı ezme","sebze",60,1.5,3,8,"ok","Uygun.",50,"2 yemek kaşığı",["ezme"]),
+F("Çoban salata","sebze",50,1,3,5,"ok","Çok uygun.",200,"1 kase",["salata"]),
+F("Mevsim salata","sebze",40,1.3,2.5,4,"ok","Çok uygun.",200,"1 kase",["salata"]),
+F("Turşu","sebze",15,.5,.2,3,"care","Tuzu yüksek; az miktar.",50,"1 küçük kase"),
+F("Hindi füme / jambon","protein",110,18,3,3,"no","İşlenmiş et; katkı ve tuz içerir.",30,"2 dilim",["jambon","füme"]),
+F("Reçel","diger",250,.4,.1,65,"care","Şekerli; 1 tatlı kaşığı.",15,"1 yemek kaşığı"),
+F("Fındık kreması","diger",540,6,31,57,"no","Şeker ve yağ çok yüksek.",15,"1 yemek kaşığı",["nutella","çikolata kreması"]),
+F("Tahin helvası","diger",500,12,30,50,"care","Şekeri yüksek; küçük bir parça.",30,"1 dilim",["helva"]),
+// Tatlılar
+F("Sütlaç","diger",120,3,3,21,"care","Şekerli ve sütlü; ara sıra küçük kase. İlaçtan en az 4 saat sonra.",150,"1 kase"),
+F("Muhallebi","diger",120,3.5,3,20,"care","Şekerli; ara sıra.",150,"1 kase",["kazandibi","tavuk göğsü tatlısı"]),
+F("Revani","diger",330,5,10,55,"no","Şerbetli, şeker ve glüten yüksek.",80,"1 dilim",["şerbetli tatlı","tulumba"]),
+F("Kek","diger",380,5,16,55,"no","Şeker, glüten ve yağ.",60,"1 dilim",["pasta"]),
+F("Kurabiye","diger",480,6,23,63,"no","Şeker, glüten ve yağ.",30,"2 adet"),
+F("Bisküvi","diger",450,7,15,72,"no","Rafine un ve şeker.",30,"4 adet"),
+F("Gofret","diger",520,6,27,65,"no","Şeker ve trans yağ riski.",35,"1 paket"),
+F("Dondurma","diger",207,3.5,11,24,"no","Şeker ve yağ.",100,"2 top"),
+F("Lokum","diger",350,0,0,88,"no","Neredeyse saf şeker.",20,"2 adet"),
+// Balık ve deniz ürünleri
+F("Palamut","protein",170,22,9,0,"ok","Omega-3 kaynağı.",150,"1 porsiyon",["balık"]),
+F("Lüfer","protein",124,20,4.2,0,"ok","Uygun.",150,"1 porsiyon",["balık"]),
+F("Sardalya","protein",208,25,11,0,"ok","Omega-3 ve selenyum kaynağı.",120,"1 porsiyon",["balık"]),
+F("Uskumru","protein",205,19,14,0,"ok","Omega-3 kaynağı.",150,"1 porsiyon",["balık"]),
+F("Alabalık","protein",148,21,6.6,0,"ok","Uygun.",150,"1 porsiyon",["balık"]),
+F("Mezgit","protein",82,18,.7,0,"ok","Yağsız ve hafif.",150,"1 porsiyon",["balık"]),
+F("Balık tava","protein",250,18,16,9,"no","Kızartma; ızgara veya buğulama tercih et.",150,"1 porsiyon",["hamsi tava"]),
+F("Kalamar (ızgara)","protein",92,16,1.4,3,"care","İyot içerir; ara sıra.",120,"1 porsiyon"),
+F("Kalamar tava","protein",175,18,7,8,"no","Kızartma ve iyot.",120,"1 porsiyon"),
+F("Ahtapot","protein",82,15,1,2,"care","İyot içerir; ara sıra.",120,"1 porsiyon"),
+// Meyveler
+F("Ayva","meyve",57,.4,.1,15,"ok","Uygun.",150,"yarım"),
+F("Dut","meyve",43,1.4,.4,10,"ok","Uygun.",100,"1 kase"),
+F("Vişne","meyve",50,1,.3,12,"ok","Uygun.",100,"1 kase"),
+F("Frambuaz","meyve",52,1.2,.7,12,"ok","Antioksidan zengini.",100,"1 kase",["ahududu"]),
+F("Mango","meyve",60,.8,.4,15,"ok","Uygun.",150,"1 kase"),
+F("Limon","meyve",29,1.1,.3,9,"ok","Uygun.",30,"yarım"),
+F("Trabzon hurması","meyve",70,.6,.2,19,"ok","Uygun.",150,"1 adet",["cennet hurması"]),
+F("Hindistan cevizi","meyve",354,3.3,33,15,"care","Yağı yüksek; az miktar.",20,"1 yemek kaşığı"),
+F("Kuru incir","meyve",249,3.3,.9,64,"care","Şekeri yüksek; 2 tane.",40,"2 adet"),
+F("Kuru erik","meyve",240,2.2,.4,64,"care","Şekeri yüksek; 3-4 tane.",30,"4 adet"),
+F("Dut kurusu","meyve",300,10,1,70,"care","Şekeri yüksek; bir avuç.",30,"1 avuç"),
+// Sebze ve yeşillik
+F("Maydanoz","sebze",36,3,.8,6,"ok","Çok uygun.",20,"1 demet"),
+F("Dereotu","sebze",43,3.5,1,7,"ok","Çok uygun.",20,"1 demet"),
+F("Nane","sebze",44,3.3,.7,8,"ok","Çok uygun.",10,"1 tutam"),
+F("Taze soğan","sebze",32,1.8,.2,7,"ok","Uygun.",30,"2 adet"),
+F("Pazı","sebze",19,1.8,.2,3.7,"ok","Uygun.",150,"1 porsiyon"),
+F("Kuşkonmaz","sebze",20,2.2,.1,3.9,"ok","Uygun.",100,"1 demet"),
+F("Acı biber","sebze",40,2,.4,9,"ok","Uygun.",20,"2 adet"),
+F("Ebegümeci","sebze",37,3,.5,6,"ok","Uygun.",150,"1 porsiyon"),
+// Kuruyemiş
+F("Kaju","kuruyemis",553,18,44,30,"ok","Çinko kaynağı; bir avuç.",20,"10 adet"),
+F("Antep fıstığı","kuruyemis",560,20,45,28,"ok","Bir avuçla sınırla.",20,"1 avuç",["fıstık"]),
+F("Leblebi","bakliyat",365,19,6,58,"ok","Protein kaynağı, uygun.",30,"1 avuç"),
+F("Ay çekirdeği","kuruyemis",584,21,51,20,"care","Tuzlu olanı fazla tuz; az miktar.",20,"1 avuç",["çekirdek"]),
+F("Karışık kuruyemiş (tuzlu)","kuruyemis",600,18,52,20,"care","Tuzu ve kalorisi yüksek; çiğ ve tuzsuz olanı seç.",30,"1 avuç"),
+// İçecekler
+F("Şalgam suyu","icecek",10,.3,0,2,"ok","Uygun; tuzlu.",200,"1 bardak"),
+F("Boza","icecek",110,1,0,25,"care","Darı/buğday ve şeker içerir.",200,"1 bardak"),
+F("Salep","icecek",90,3,2,15,"care","Şekerli ve sütlü.",200,"1 kupa",["sahlep"]),
+F("Maden suyu","icecek",0,0,0,0,"ok","Uygun.",200,"1 şişe",["soda"]),
+F("Limonata","icecek",45,0,0,11,"care","Şekerli; az şekerli yap.",200,"1 bardak"),
+F("Kutu meyve suyu","icecek",48,.3,0,12,"no","Şeker ilaveli; meyvenin kendisini ye.",200,"1 kutu",["meyve suyu"]),
+F("Enerji içeceği","icecek",45,0,0,11,"no","Şeker ve kafein yüksek.",250,"1 kutu"),
+F("Latte / sütlü kahve","icecek",50,3,2,5,"care","Süt ve kahve ilacı etkiler; ilaçtan en az 4 saat sonra.",250,"1 kupa",["kahve","cappuccino"]),
+F("Hazır kahve (3'ü 1 arada)","icecek",440,4,14,75,"no","Şeker ve trans yağ içerir.",18,"1 paket",["nescafe","kahve"]),
+// Sos ve diğer
+F("Ketçap","diger",112,1.3,.2,26,"care","Şeker ilaveli; az.",15,"1 yemek kaşığı"),
+F("Mayonez","diger",680,1,75,1,"no","Yağı çok yüksek.",15,"1 yemek kaşığı"),
+F("Hardal","diger",66,4,4,6,"ok","Uygun.",10,"1 tatlı kaşığı"),
+F("Domates salçası","diger",82,4.3,.5,19,"ok","Uygun; tuzuna dikkat.",15,"1 yemek kaşığı",["salça"]),
+F("Nar ekşisi","diger",300,0,0,75,"care","Şekerli olabilir; az kullan.",10,"1 yemek kaşığı"),
+];
+const CATS=[["all","Tümü"],["sebze","Sebze"],["meyve","Meyve"],["bakliyat","Bakliyat"],["tahil","Tahıl"],["protein","Et/Balık"],["sut","Süt"],["kuruyemis","Kuruyemiş"],["icecek","İçecek"],["diger","Diğer"]];
+const ST={ok:["st-ok","Yiyebilirsin"],care:["st-care","Dikkatli ye"],no:["st-no","Uzak dur"]};
+const MEALS=[["kahvalti","Kahvaltı"],["ogle","Öğle"],["aksam","Akşam"],["ara","Ara öğün"]];
+
+/* ---------- Durum ---------- */
+const DEFAULTS={kcal:1800,pPct:25,fPct:30,cPct:45,carry:true,carryMax:20,medName:"Levotiron",medTime:"08:45",custom:[]};
+let S={settings:{...DEFAULTS},days:{}};
+let tab="today", q="", cat="all", histMonth=null, selDay=null;
+const $=s=>document.querySelector(s);
+const pad=n=>String(n).padStart(2,"0");
+const keyOf=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const todayKey=()=>keyOf(new Date());
+const parseKey=k=>{const[a,b,c]=k.split("-").map(Number);return new Date(a,b-1,c)};
+const r0=x=>Math.round(x), r1=x=>Math.round(x*10)/10;
+const trLower=s=>s.toLocaleLowerCase("tr-TR").normalize("NFC");
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmtDate=(d,opt)=>d.toLocaleDateString("tr-TR",opt||{day:"numeric",month:"long",weekday:"long"});
+
+/* ---------- Kayıt katmanı: önce bu cihaz, hesap bağlanınca bulut ---------- */
+const LS="tiroid-defterim-v1";
+function lsLoad(){try{const v=JSON.parse(localStorage.getItem(LS)||"null");if(v&&v.settings){S.settings={...DEFAULTS,...v.settings};S.days=v.days||{}}}catch(e){}}
+function lsSave(){try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){}}
+let cloud=null;
+async function initCloud(){
+  try{
+    if(!window.claude||!claude.use)return;
+    const [db,user]=await Promise.all([claude.use("db"),claude.use("user")]);
+    if(!db||!user)return;
+    const id=await user.id(); if(!id)return;
+    const col=db.collection("data/users/"+id);
+    const snap=await col.get();
+    if(snap.empty){
+      cloud=col; $("#sync").textContent="Hesabına kaydediliyor";
+      await col.doc("settings").set(JSON.parse(JSON.stringify(S.settings)));
+      for(const k of Object.keys(S.days)) await col.doc("d_"+k).set(JSON.parse(JSON.stringify(S.days[k])));
+    }else{
+      snap.docs.forEach(d=>{const v=d.data();if(!v)return;
+        if(d.id==="settings")S.settings={...DEFAULTS,...v};
+        else if(d.id.startsWith("d_"))S.days[d.id.slice(2)]=JSON.parse(JSON.stringify(v));});
+      cloud=col; lsSave();
+    }
+    $("#sync").textContent="Hesabına kaydediliyor";
+    render();
+  }catch(e){$("#sync").textContent="Bu cihazda kayıtlı"}
+}
+function saveSettings(){lsSave();if(cloud)cloud.doc("settings").set(JSON.parse(JSON.stringify(S.settings))).catch(()=>{})}
+function saveDay(k){lsSave();if(cloud&&S.days[k])cloud.doc("d_"+k).set(JSON.parse(JSON.stringify(S.days[k]))).catch(()=>{})}
+function day(k){if(!S.days[k])S.days[k]={entries:[],med:null};return S.days[k]}
+
+/* ---------- Hesaplar ---------- */
+function totals(d){const t={k:0,p:0,f:0,c:0};(d&&d.entries||[]).forEach(e=>{t.k+=e.k;t.p+=e.p;t.f+=e.f;t.c+=e.c});return t}
+function prevKey(k){const d=parseKey(k);d.setDate(d.getDate()-1);return keyOf(d)}
+// Dünkü aşım bugünün hedefinden düşülür (en fazla ayarlanan yüzde kadar)
+function targetFor(k){
+  const st=S.settings, base=+st.kcal||1800;
+  let carry=0;
+  if(st.carry){const y=S.days[prevKey(k)];
+    if(y&&y.entries&&y.entries.length){const yt=totals(y).k, ytar=y.target||base; if(yt>ytar)carry=Math.min(yt-ytar,base*(st.carryMax/100));}}
+  const kcal=Math.round(base-carry);
+  return{base,carry:Math.round(carry),kcal,p:kcal*st.pPct/100/4,f:kcal*st.fPct/100/9,c:kcal*st.cPct/100/4};
+}
+
+function stOf(e){if(e.d)return e.d;const f=allFoods().find(x=>x.n===e.n);return f?f.d:"ok"}
+function lagOf(f){const w=f.why||"";return /4 saat/.test(w)?240:/30-60 dk/.test(w)?60:30}
+const toMin=t=>{const[h,m]=t.split(":").map(Number);return h*60+m};
+const toHM=m=>{m=((m%1440)+1440)%1440;return pad(Math.floor(m/60))+":"+pad(m%60)};
+const nowMin=()=>{const n=new Date();return n.getHours()*60+n.getMinutes()};
+function medBase(k){const d=S.days[k];return d&&d.med?toMin(d.med.at):toMin(S.settings.medTime)}
+function vPlan(k){
+  const d=day(k),base=medBase(k),now=nowMin(),taken=!!d.med;
+  const rows=[
+    [base,"İlaç","Aç karnına, sadece bir bardak suyla",0],
+    [base+30,"Kahvaltı","En erken bu saatte; 60 dk beklemek daha iyi",30],
+    [base+60,"Çay ve kahve","Kahve emilimi en çok etkileyen içecek",60],
+    [base+240,"Süt, yoğurt, peynir, soya","Ayrıca keten tohumu, kalsiyum ve demir takviyesi",240]];
+  return `<section class="card"><div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px"><h2>Bugünün ilaç düzeni</h2><span class="small muted">${taken?"ilacı aldığın saate göre":"plan saatine göre"}</span></div>
+  <div class="plan">${rows.map(([t,w,sm,off],i)=>{let st;
+    if(i===0)st=taken?`<span class="s done">Alındı</span>`:now>t?`<span class="s wait">Alınmadı</span>`:`<span class="s next">Bekliyor</span>`;
+    else st=!taken?`<span class="s next">İlaçtan sonra</span>`:now>=t?`<span class="s done">Serbest</span>`:`<span class="s wait">${t-now} dk kaldı</span>`;
+    return `<div class="step"><span class="t">${i===0?"":"≥ "}${toHM(t)}</span><span class="w"><b>${w}</b><small>${sm}</small></span>${st}</div>`}).join("")}</div></section>`;
+}
+/* ---------- Ekranlar ---------- */
+function ring(pct,over){
+  const R=56,C=2*Math.PI*R,v=Math.min(pct,1);
+  return `<svg viewBox="0 0 132 132" aria-hidden="true"><circle cx="66" cy="66" r="${R}" fill="none" stroke="var(--sunk)" stroke-width="12"/>
+  <circle cx="66" cy="66" r="${R}" fill="none" stroke="${over?"var(--bad)":"var(--accent)"}" stroke-width="12" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-v)}"/></svg>`;
+}
+function macro(name,col,got,tar,unit){
+  const left=tar-got, over=left<0, pct=tar?Math.min(got/tar,1)*100:0;
+  return `<div class="macro"><div class="head"><span><b>${name}</b></span><span>${r0(got)} / ${r0(tar)} ${unit}</span></div>
+  <div class="bar"><i style="width:${pct}%;background:${over?"var(--bad)":col}"></i></div>
+  <div class="left ${over?"over":"ok"}">${over?`${r0(-left)} ${unit} aştın`:`${r0(left)} ${unit} daha alabilirsin`}</div></div>`;
+}
+function vToday(){
+  const k=todayKey(), d=day(k), T=targetFor(k), t=totals(d);
+  if(!d.entries.length)d.target=T.kcal;
+  const left=T.kcal-t.k, over=left<0;
+  const med=d.med, st=S.settings;
+  const now=new Date(), [mh,mm]=st.medTime.split(":").map(Number);
+  const late=!med&&(now.getHours()*60+now.getMinutes())>(mh*60+mm+60);
+  let html=`<section class="card">
+    <div class="ring-row"><div class="ring">${ring(t.k/T.kcal,over)}<div class="c">
+      <div class="big num" style="color:${over?"var(--bad)":"var(--ink)"}">${r0(Math.abs(left))}</div>
+      <div class="sub">${over?"kcal aştın":"kcal kaldı"}</div></div></div>
+    <div class="ring-meta">
+      <div class="kv"><span class="muted">Hedef</span><b>${T.kcal} kcal</b></div>
+      <div class="kv"><span class="muted">Yediğin</span><b>${r0(t.k)} kcal</b></div>
+      ${T.carry?`<div class="carry">Dünkü ${T.carry} kcal aşım bugünden düşüldü</div>`:""}
+    </div></div>
+    <div class="macros" style="margin-top:16px">
+      ${macro("Protein","var(--prot)",t.p,T.p,"g")}
+      ${macro("Yağ","var(--fat)",t.f,T.f,"g")}
+      ${macro("Karbonhidrat","var(--carb)",t.c,T.c,"g")}
+    </div>
+    ${over?`<div class="notice warn" style="margin-top:14px">Bugün ${r0(-left)} kcal fazladasın. ${st.carry?`Yarınki hedefin ${Math.round(T.base-Math.min(-left,T.base*st.carryMax/100))} kcal olacak.`:""}</div>`:""}
+  </section>
+  ${(()=>{const bad=d.entries.filter(e=>stOf(e)==="no");return bad.length?`<div class="alert" role="alert"><b>Bugün uzak durman gereken ${bad.length} şey yedin</b>${[...new Set(bad.map(e=>esc(e.n)))].join(", ")}</div>`:""})()}
+  <section class="card med ${med?"done":""}">
+    <div class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="8" width="18" height="8" rx="4" transform="rotate(-35 12 12)"/><path d="m9.5 8.5 5 7"/></svg></div>
+    <div class="txt"><b>${esc(st.medName)}</b><div class="small ${late?"":"muted"}" style="${late?"color:var(--bad);font-weight:700":""}">${med?`${med.at} saatinde aldın`:late?`Saat ${st.medTime} geçti, henüz almadın`:`Her sabah ${st.medTime} · aç karnına`}</div></div>
+    ${med?`<button class="btn sm ghost" id="medUndo">Geri al</button>`:`<button class="btn primary" id="medTake">Aldım</button>`}
+  </section>
+  ${vPlan(k)}
+  <section class="card"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><h2>Bugün yediklerin</h2><button class="btn sm primary" id="goSearch">+ Ekle</button></div>`;
+  if(!d.entries.length) html+=`<div class="empty">Henüz bir şey eklemedin.<br>“Ara” sekmesinden yiyecek bulup ekleyebilirsin.</div>`;
+  else MEALS.forEach(([m,ml])=>{const es=d.entries.filter(e=>e.meal===m);if(!es.length)return;
+    html+=`<div class="meal"><div class="mh"><span class="label">${ml}</span><span class="small muted num">${r0(es.reduce((a,e)=>a+e.k,0))} kcal</span></div>`+
+    es.map(e=>{const sd=stOf(e);return `<div class="entry ${ST[sd][0]}"><div class="n"><span class="nm">${esc(e.n)}</span>${sd!=="ok"?`<span class="tag">${ST[sd][1]}</span>`:""}<small>${e.g} g · P ${r1(e.p)} · Y ${r1(e.f)} · K ${r1(e.c)}</small></div><span class="k">${r0(e.k)}</span><button class="x" aria-label="${esc(e.n)} sil" data-del="${e.id}">×</button></div>`}).join("")+`</div>`});
+  html+=`</section>`;
+  return html;
+}
+function allFoods(){return FOODS.concat((S.settings.custom||[]).map(c=>({...c,custom:true})))}
+function vSearch(){
+  return `<div class="search"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <input id="q" type="search" placeholder="Brokoli, mercimek, kahve…" autocomplete="off" value="${esc(q)}" aria-label="Yiyecek ara"></div>
+  <div class="chips" role="group" aria-label="Kategori">${CATS.map(([c,l])=>`<button class="chip" data-cat="${c}" aria-pressed="${cat===c}">${l}</button>`).join("")}</div>
+  <div class="legend"><span><i style="background:var(--good)"></i>Yiyebilirsin</span><span><i style="background:var(--warn)"></i>Dikkatli ye</span><span><i style="background:var(--bad)"></i>Uzak dur</span></div>
+  <div class="results" id="results"></div>
+  <button class="btn" id="newFood">Listede yok mu? Kendi yiyeceğini ekle</button>
+  <p class="small muted" style="margin:0">Bu öneriler genel Haşimato beslenme bilgisine dayanır. Kendi tahlillerine göre doktorun veya diyetisyeninin söyledikleri her zaman önce gelir.</p>`;
+}
+function renderResults(){
+  const box=$("#results"); if(!box)return;
+  const qq=trLower(q.trim());
+  const AF=allFoods();AF.forEach((f,i)=>f._i=i);
+  let list=AF.filter(f=>(cat==="all"||f.cat===cat)&&(!qq||trLower(f.n).includes(qq)||(f.al&&f.al.some?f.al:[]).some(a=>trLower(a).includes(qq))));
+  if(qq)list.sort((a,b)=>(trLower(a.n).startsWith(qq)?0:1)-(trLower(b.n).startsWith(qq)?0:1));
+  if(!list.length){box.innerHTML=`<div class="empty">“${esc(q)}” bulunamadı. Aşağıdan kendin ekleyebilirsin.</div>`;return}
+  box.innerHTML=list.slice(0,400).map(f=>{const [cls,lab]=ST[f.d];const i=f._i;
+    return `<div class="food ${cls}"><div class="body"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="name">${esc(f.n)}</span><span class="pill">${lab}</span></div>
+    <div class="why">${esc(f.why||"")}</div><div class="nut">100 g: ${f.k} kcal · P ${f.p} g · Y ${f.f} g · K ${f.c} g</div></div>
+    <button class="add" aria-label="${esc(f.n)} ekle" data-add="${i}">+</button></div>`}).join("");
+}
+function vHistory(){
+  if(!histMonth){const n=new Date();histMonth=new Date(n.getFullYear(),n.getMonth(),1)}
+  const y=histMonth.getFullYear(),m=histMonth.getMonth(),dim=new Date(y,m+1,0).getDate(),first=(new Date(y,m,1).getDay()+6)%7;
+  const tk=todayKey();
+  let cells="";for(let i=0;i<first;i++)cells+=`<span></span>`;
+  let logged=0,okDays=0,sum=0,medDays=0,overSum=0,pts=[];
+  for(let d=1;d<=dim;d++){const k=y+"-"+pad(m+1)+"-"+pad(d),D=S.days[k];let cls="";
+    if(D&&D.entries&&D.entries.length){const t=totals(D).k,tar=D.target||targetFor(k).kcal;logged++;sum+=t;
+      if(t>tar*1.05){cls="over";overSum+=t-tar}else if(t<tar*.8)cls="under";else{cls="ok";okDays++}
+      pts.push([d,t,tar]);}
+    if(D&&D.med)medDays++;
+    cells+=`<button class="d ${cls} ${k===tk?"today":""} ${k===selDay?"sel":""}" data-day="${k}" aria-label="${d}">${d}<span class="dot ${D&&D.med?"":"no"}"></span></button>`;}
+  const mName=histMonth.toLocaleDateString("tr-TR",{month:"long",year:"numeric"});
+  let html=`<section class="card"><div class="cal-head"><button class="btn sm ghost" id="mPrev" aria-label="Önceki ay">‹</button><h2>${mName}</h2><button class="btn sm ghost" id="mNext" aria-label="Sonraki ay">›</button></div>
+  <div class="cal">${["Pt","Sa","Ça","Pe","Cu","Ct","Pz"].map(x=>`<span class="dow">${x}</span>`).join("")}${cells}</div>
+  <div class="legend" style="margin-top:12px"><span><i style="background:var(--good)"></i>Hedefte</span><span><i style="background:var(--bad)"></i>Aştın</span><span><i style="background:var(--warn)"></i>Çok az</span><span>• İlaç alındı</span></div></section>
+  <section class="card"><span class="label">Bu ayın özeti</span><div class="stats" style="margin-top:10px">
+    <div class="stat"><b>${logged?r0(sum/logged):"–"}</b><span class="small muted">ort. kcal / gün</span></div>
+    <div class="stat"><b>${okDays}/${logged}</b><span class="small muted">hedefte geçen gün</span></div>
+    <div class="stat"><b>${medDays}</b><span class="small muted">ilaç alınan gün</span></div>
+    <div class="stat"><b>${r0(overSum)}</b><span class="small muted">toplam aşım (kcal)</span></div></div>
+    ${pts.length>1?chart(pts,dim):""}</section>`;
+  if(selDay&&S.days[selDay]){const D=S.days[selDay],t=totals(D),tar=D.target||targetFor(selDay).kcal;
+    html+=`<section class="card"><h2>${fmtDate(parseKey(selDay))}</h2><p class="small muted" style="margin:4px 0 10px">${r0(t.k)} / ${tar} kcal · P ${r0(t.p)} g · Y ${r0(t.f)} g · K ${r0(t.c)} g · İlaç: ${D.med?D.med.at:"alınmadı"}</p>`+
+    (D.entries||[]).map(e=>{const sd=stOf(e);return `<div class="entry ${ST[sd][0]}"><div class="n"><span class="nm">${esc(e.n)}</span>${sd!=="ok"?`<span class="tag">${ST[sd][1]}</span>`:""}<small>${e.g} g</small></div><span class="k">${r0(e.k)}</span></div>`}).join("")+`</section>`;}
+  else if(selDay)html+=`<section class="card"><h2>${fmtDate(parseKey(selDay))}</h2><p class="small muted" style="margin:6px 0 0">Bu gün için kayıt yok.</p></section>`;
+  return html;
+}
+function chart(pts,dim){
+  const W=520,H=150,L=34,Rr=8,Tt=10,B=22,max=Math.max(...pts.map(p=>Math.max(p[1],p[2])))*1.1;
+  const x=d=>L+(d-1)/(dim-1)*(W-L-Rr), y=v=>Tt+(1-v/max)*(H-Tt-B);
+  const step=max>2500?1000:500, ticks=[];for(let v=0;v<=max;v+=step)ticks.push(v);
+  const line=pts.map((p,i)=>(i?"L":"M")+x(p[0]).toFixed(1)+" "+y(p[1]).toFixed(1)).join("");
+  const tline=pts.map((p,i)=>(i?"L":"M")+x(p[0]).toFixed(1)+" "+y(p[2]).toFixed(1)).join("");
+  return `<div style="margin-top:14px"><span class="label">Günlük kalori</span><svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Ay boyunca günlük kalori grafiği">
+  ${ticks.map(v=>`<line x1="${L}" x2="${W-Rr}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)" stroke-width="1"/><text x="${L-6}" y="${y(v)+4}" text-anchor="end" font-size="10" fill="var(--muted)">${v}</text>`).join("")}
+  <path d="${tline}" fill="none" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="4 4"/>
+  <path d="${line}" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linejoin="round"/>
+  ${pts.map(p=>`<circle cx="${x(p[0])}" cy="${y(p[1])}" r="3.5" fill="${p[1]>p[2]*1.05?"var(--bad)":"var(--accent)"}"/>`).join("")}
+  ${[1,10,20,dim].map(d=>`<text x="${x(d)}" y="${H-6}" text-anchor="middle" font-size="10" fill="var(--muted)">${d}</text>`).join("")}
+  </svg><div class="legend"><span><i style="background:var(--accent)"></i>Yediğin</span><span><i style="background:var(--muted)"></i>Hedef (kesikli)</span></div></div>`;
+}
+function vSettings(){
+  const st=S.settings, sum=(+st.pPct)+(+st.fPct)+(+st.cPct);
+  return `<section class="card" style="display:flex;flex-direction:column;gap:12px"><h2>Günlük hedef</h2>
+  <div class="field"><label for="sKcal">Günlük kalori ihtiyacın (kcal)</label><input id="sKcal" type="number" inputmode="numeric" min="800" max="5000" value="${st.kcal}"></div>
+  <div class="row"><div class="field"><label for="sP">Protein %</label><input id="sP" type="number" inputmode="numeric" value="${st.pPct}"></div>
+  <div class="field"><label for="sF">Yağ %</label><input id="sF" type="number" inputmode="numeric" value="${st.fPct}"></div>
+  <div class="field"><label for="sC">Karb. %</label><input id="sC" type="number" inputmode="numeric" value="${st.cPct}"></div></div>
+  <div class="small ${sum===100?"muted":""}" style="${sum===100?"":"color:var(--bad);font-weight:700"}">Toplam %${sum} ${sum===100?`→ ${r0(st.kcal*st.pPct/400)} g protein · ${r0(st.kcal*st.fPct/900)} g yağ · ${r0(st.kcal*st.cPct/400)} g karbonhidrat`:"(100 olmalı)"}</div>
+  <label style="display:flex;gap:10px;align-items:flex-start"><input id="sCarry" type="checkbox" ${st.carry?"checked":""} style="width:20px;height:20px;margin-top:2px"><span>Aştığım kaloriyi ertesi günün hedefinden düş<br><span class="small muted">En fazla hedefin %${st.carryMax}'i kadar düşülür, aşırı kısıtlama olmasın diye.</span></span></label>
+  </section>
+  <section class="card" style="display:flex;flex-direction:column;gap:12px"><h2>İlaç hatırlatıcı</h2>
+  <div class="row"><div class="field"><label for="sMed">İlaç adı</label><input id="sMed" value="${esc(st.medName)}"></div>
+  <div class="field"><label for="sMedT">Saat</label><input id="sMedT" type="time" value="${st.medTime}"></div></div>
+  ${window.Android?`<div class="notice">Uygulama her gün bu saatte bildirim gönderir. Bildirimdeki “Aldım” düğmesine basarsan burada da işaretlenir.</div>`:`<div class="notice">Bu sayfa kapalıyken ses çıkaramaz. Gerçek alarm telefonunun Saat uygulamasında kurulu olmalı. Burada aldığını işaretlersen hangi günler aldığın geçmişte görünür.</div>`}
+  <div class="small muted">Levotiroksin genelde sabah aç karnına, sadece suyla alınır; kahvaltı ve kahveden 30-60 dk önce, süt, kalsiyum, demir ve soyadan 4 saat önce.</div>
+  </section>
+  <button class="btn primary" id="saveSet">Kaydet</button>
+  <section class="card" style="display:flex;flex-direction:column;gap:10px"><h2>Yedek</h2>
+  <p class="small muted" style="margin:0">Kayıtlarını başka bir cihaza ya da uygulamaya taşımak için yedeği kopyala, diğer tarafta “Geri yükle” kutusuna yapıştır.</p>
+  <button class="btn" id="bkCopy">Yedeği kopyala</button>
+  <textarea id="bkText" rows="4" placeholder="Yedeği buraya yapıştır" style="width:100%;border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:10px;font-size:13px;font-family:ui-monospace,monospace"></textarea>
+  <button class="btn" id="bkLoad">Geri yükle</button><div class="small" id="bkMsg"></div></section>
+  ${(st.custom||[]).length?`<section class="card"><h2>Eklediğin yiyecekler</h2>${st.custom.map((c,i)=>`<div class="entry"><div class="n">${esc(c.n)}<small>${c.k} kcal / 100 g</small></div><button class="x" data-delc="${i}" aria-label="${esc(c.n)} sil">×</button></div>`).join("")}</section>`:""}`;
+}
+
+/* ---------- Ekleme penceresi ---------- */
+function defaultMeal(){const h=new Date().getHours();return h<11?"kahvalti":h<16?"ogle":h<21?"aksam":"ara"}
+function openAdd(f){
+  let g=f.por||100, meal=defaultMeal();
+  const [cls,lab]=ST[f.d];
+  const sc=document.createElement("div");sc.className="scrim";
+  sc.innerHTML=`<div class="sheet" role="dialog" aria-modal="true" aria-label="${esc(f.n)} ekle">
+   <div class="${cls}" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><h2 style="font-size:18px">${esc(f.n)}</h2><span class="pill">${lab}</span></div>
+   ${f.d!=="ok"?`<div class="notice ${f.d==="no"?"":"warn"}" style="${f.d==="no"?"background:var(--bad-soft);color:var(--bad);font-weight:700":""}">${esc(f.why)}</div>`:""}
+   ${(()=>{const k=todayKey(),D=S.days[k];if(!D||!D.med)return "";const free=toMin(D.med.at)+lagOf(f),now=nowMin();
+     return now<free?`<div class="notice warn">İlacını ${D.med.at}'te aldın. Bunu yemek için ${toHM(free)}'e kadar beklemen daha iyi (${free-now} dk kaldı).</div>`:""})()}
+   <div class="field"><label for="aG">Miktar (gram)</label><input id="aG" type="number" inputmode="decimal" value="${g}"></div>
+   <div class="chips">${f.por?`<button class="chip" data-g="${f.por}">${esc(f.pl)} (${f.por} g)</button><button class="chip" data-g="${f.por*2}">2 × (${f.por*2} g)</button>`:""}<button class="chip" data-g="100">100 g</button></div>
+   <div class="seg" role="group" aria-label="Öğün">${MEALS.map(([m,l])=>`<button data-meal="${m}" aria-pressed="${m===meal}">${l}</button>`).join("")}</div>
+   <div class="preview" id="aPrev"></div>
+   <div class="row"><button class="btn ghost" id="aCancel">Vazgeç</button><button class="btn primary" id="aOk">Ekle</button></div></div>`;
+  document.body.appendChild(sc);
+  const upd=()=>{g=Math.max(0,+$("#aG").value||0);const m=g/100;
+    const T=targetFor(todayKey()),t=totals(day(todayKey())),after=T.kcal-t.k-f.k*m;
+    $("#aPrev").innerHTML=`<div><b>${r0(f.k*m)}</b><span>kcal</span></div><div><b>${r1(f.p*m)}</b><span>protein g</span></div><div><b>${r1(f.f*m)}</b><span>yağ g</span></div><div><b>${r1(f.c*m)}</b><span>karb. g</span></div>`+
+     `<div style="grid-column:1/-1;background:transparent;font-size:13px;color:${after<0?"var(--bad)":"var(--muted)"};font-weight:${after<0?700:400}">${after<0?`Eklersen bugün ${r0(-after)} kcal aşacaksın`:`Ekledikten sonra ${r0(after)} kcal kalacak`}</div>`};
+  upd();
+  sc.addEventListener("input",e=>{if(e.target.id==="aG")upd()});
+  sc.addEventListener("click",e=>{const b=e.target.closest("button");
+    if(e.target===sc||(b&&b.id==="aCancel")){sc.remove();return}
+    if(!b)return;
+    if(b.dataset.g){$("#aG").value=b.dataset.g;upd()}
+    if(b.dataset.meal){meal=b.dataset.meal;sc.querySelectorAll("[data-meal]").forEach(x=>x.setAttribute("aria-pressed",x===b))}
+    if(b.id==="aOk"&&g>0){const m=g/100,k=todayKey(),d=day(k);
+      if(!d.entries.length)d.target=targetFor(k).kcal;
+      d.entries.push({id:Date.now().toString(36),n:f.n,d:f.d,g:r0(g),k:f.k*m,p:f.p*m,f:f.f*m,c:f.c*m,meal});
+      saveDay(k);sc.remove();toast(`${f.n} eklendi`);render();}
+  });
+  setTimeout(()=>$("#aG")&&$("#aG").select(),50);
+}
+function openNewFood(){
+  const sc=document.createElement("div");sc.className="scrim";let d="ok";
+  sc.innerHTML=`<div class="sheet" role="dialog" aria-modal="true" aria-label="Yeni yiyecek"><h2 style="font-size:18px">Yeni yiyecek</h2>
+  <div class="field"><label for="nN">Adı</label><input id="nN" value="${esc(q)}"></div>
+  <div class="small muted">Değerleri paketin üzerindeki “100 g için” tablosundan yaz.</div>
+  <div class="row"><div class="field"><label for="nK">kcal</label><input id="nK" type="number" inputmode="decimal"></div><div class="field"><label for="nP">Protein g</label><input id="nP" type="number" inputmode="decimal"></div></div>
+  <div class="row"><div class="field"><label for="nF">Yağ g</label><input id="nF" type="number" inputmode="decimal"></div><div class="field"><label for="nC">Karb. g</label><input id="nC" type="number" inputmode="decimal"></div></div>
+  <div class="seg" role="group" aria-label="Durum"><button data-d="ok" aria-pressed="true">Yiyebilirim</button><button data-d="care" aria-pressed="false">Dikkatli</button><button data-d="no" aria-pressed="false">Uzak dur</button></div>
+  <div class="small" id="nErr" style="color:var(--bad)"></div>
+  <div class="row"><button class="btn ghost" id="nCancel">Vazgeç</button><button class="btn primary" id="nOk">Kaydet</button></div></div>`;
+  document.body.appendChild(sc);
+  sc.addEventListener("click",e=>{const b=e.target.closest("button");
+    if(e.target===sc||(b&&b.id==="nCancel")){sc.remove();return}if(!b)return;
+    if(b.dataset.d){d=b.dataset.d;sc.querySelectorAll("[data-d]").forEach(x=>x.setAttribute("aria-pressed",x===b))}
+    if(b.id==="nOk"){const n=$("#nN").value.trim(),k=+$("#nK").value;
+      if(!n||!(k>=0)||$("#nK").value===""){$("#nErr").textContent="Ad ve kalori gerekli.";return}
+      S.settings.custom=S.settings.custom||[];
+      S.settings.custom.push({n,cat:"diger",k,p:+$("#nP").value||0,f:+$("#nF").value||0,c:+$("#nC").value||0,d,why:"Senin eklediğin yiyecek.",por:100,pl:"100 g",al:[]});
+      saveSettings();sc.remove();q=n;toast("Yiyecek kaydedildi");render();}
+  });
+}
+let tt;function toast(m){document.querySelectorAll(".toast").forEach(x=>x.remove());const t=document.createElement("div");t.className="toast";t.textContent=m;t.setAttribute("role","status");document.body.appendChild(t);clearTimeout(tt);tt=setTimeout(()=>t.remove(),2200)}
+
+/* ---------- Render & olaylar ---------- */
+function render(){
+  $("#hdrDate").textContent=fmtDate(new Date(),{day:"numeric",month:"long",weekday:"short"});
+  const v=$("#view");
+  v.innerHTML=tab==="today"?vToday():tab==="search"?vSearch():tab==="history"?vHistory():vSettings();
+  if(tab==="search")renderResults();
+  document.querySelectorAll("nav.tabs button").forEach(b=>b.dataset.tab===tab?b.setAttribute("aria-current","page"):b.removeAttribute("aria-current"));
+  try{localStorage.setItem(LS+"-tab",tab)}catch(e){}
+}
+document.querySelector("nav.tabs").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;tab=b.dataset.tab;render();window.scrollTo(0,0)});
+$("#view").addEventListener("input",e=>{if(e.target.id==="q"){q=e.target.value;renderResults()}});
+$("#view").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
+  const k=todayKey();
+  if(b.id==="medTake"){const n=new Date();day(k).med={at:pad(n.getHours())+":"+pad(n.getMinutes())};saveDay(k);toast("İlaç işaretlendi");render()}
+  else if(b.id==="medUndo"){day(k).med=null;saveDay(k);render()}
+  else if(b.id==="goSearch"){tab="search";render();setTimeout(()=>$("#q")&&$("#q").focus(),30)}
+  else if(b.dataset.del){const d=day(k);d.entries=d.entries.filter(x=>x.id!==b.dataset.del);saveDay(k);render()}
+  else if(b.dataset.cat){cat=b.dataset.cat;document.querySelectorAll("[data-cat]").forEach(x=>x.setAttribute("aria-pressed",x===b));renderResults()}
+  else if(b.dataset.add){openAdd(allFoods()[+b.dataset.add])}
+  else if(b.id==="newFood"){openNewFood()}
+  else if(b.id==="mPrev"){histMonth=new Date(histMonth.getFullYear(),histMonth.getMonth()-1,1);selDay=null;render()}
+  else if(b.id==="mNext"){histMonth=new Date(histMonth.getFullYear(),histMonth.getMonth()+1,1);selDay=null;render()}
+  else if(b.dataset.day){selDay=b.dataset.day;render()}
+  else if(b.dataset.delc){S.settings.custom.splice(+b.dataset.delc,1);saveSettings();render()}
+  else if(b.id==="bkCopy"){const t=JSON.stringify({app:"tiroid-defterim",v:1,settings:S.settings,days:S.days});$("#bkText").value=t;
+    let ok=false;try{if(window.Android&&Android.copy){Android.copy(t);ok=true}}catch(e){}
+    if(ok)toast("Yedek kopyalandı");else if(navigator.clipboard)navigator.clipboard.writeText(t).then(()=>toast("Yedek kopyalandı"),()=>{$("#bkText").select();toast("Metni seçip kopyala")});else{$("#bkText").select();toast("Metni seçip kopyala")}}
+  else if(b.id==="bkLoad"){let v;try{v=JSON.parse($("#bkText").value)}catch(e){}
+    if(!v||v.app!=="tiroid-defterim"||!v.days){$("#bkMsg").style.color="var(--bad)";$("#bkMsg").textContent="Bu metin bir Tiroid Defterim yedeği değil. Tamamını yapıştırdığından emin ol.";return}
+    if(b.dataset.ok!=="1"){b.dataset.ok="1";b.textContent="Emin misin? Aynı günlerin kaydı değişir. Evet, yükle";return}
+    S.settings={...DEFAULTS,...v.settings};Object.assign(S.days,v.days);saveSettings();Object.keys(v.days).forEach(saveDay);pushReminder();toast(Object.keys(v.days).length+" günlük kayıt yüklendi");render()}
+  else if(b.id==="saveSet"){const st=S.settings;
+    st.kcal=Math.max(800,Math.min(5000,+$("#sKcal").value||1800));st.pPct=+$("#sP").value||0;st.fPct=+$("#sF").value||0;st.cPct=+$("#sC").value||0;
+    st.carry=$("#sCarry").checked;st.medName=$("#sMed").value.trim()||"İlacım";st.medTime=$("#sMedT").value||"07:00";
+    const d=day(k);if(!d.entries.length)d.target=targetFor(k).kcal;
+    saveSettings();pushReminder();toast(st.pPct+st.fPct+st.cPct===100?"Ayarlar kaydedildi":"Kaydedildi; yüzdelerin toplamı 100 değil");render()}
+});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")document.querySelectorAll(".scrim").forEach(x=>x.remove())});
+
+lsLoad();
+function pushReminder(){try{if(window.Android&&Android.setReminder)Android.setReminder(S.settings.medTime,S.settings.medName)}catch(e){}}
+function syncNative(){try{if(!window.Android||!Android.takenFromNotification)return;const v=Android.takenFromNotification();
+  if(v){const[dk,at]=v.split("|");if(dk&&at){day(dk).med={at};saveDay(dk);render()}}}catch(e){}}
+window.onNativeResume=()=>{syncNative();render()};
+pushReminder();
+try{const t=localStorage.getItem(LS+"-tab");if(t)tab=t}catch(e){}
+render();
+syncNative();
+initCloud();
+setInterval(()=>{if(tab==="today"&&!document.querySelector(".scrim"))render()},60000);
+</script>
+
+</body></html>

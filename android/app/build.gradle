@@ -1,0 +1,35 @@
+plugins { id 'com.android.application' }
+
+def runNo = (System.getenv("GITHUB_RUN_NUMBER") ?: "1").toInteger()
+
+android {
+    namespace 'com.backpacker.tiroiddefterim'
+    compileSdk 34
+    defaultConfig {
+        applicationId 'com.backpacker.tiroiddefterim'
+        minSdk 24
+        targetSdk 34
+        versionCode runNo
+        versionName "1.0." + runNo
+    }
+    signingConfigs {
+        release {
+            storeFile file('release.keystore')
+            storePassword 'tiroiddefterim'
+            keyAlias 'tiroid'
+            keyPassword 'tiroiddefterim'
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    buildFeatures { buildConfig true }
+    lint { abortOnError false; checkReleaseBuilds false }
+}

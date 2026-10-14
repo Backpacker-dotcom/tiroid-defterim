@@ -1,0 +1,40 @@
+name: APK oluştur
+
+on:
+  push:
+    branches: [main]
+    paths: ["android/**", ".github/workflows/android.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Uygulama sayfasını APK içine kopyala
+        run: cp web/index.html android/app/src/main/assets/index.html
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.10.2"
+      - name: APK derle
+        working-directory: android
+        run: gradle --no-daemon assembleRelease
+      - name: APK'yı adlandır
+        run: cp android/app/build/outputs/apk/release/app-release.apk TiroidDefterim.apk
+      - name: Sürüm olarak yayınla
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: Tiroid Defterim 1.0.${{ github.run_number }}
+          make_latest: true
+          files: TiroidDefterim.apk
+          body: |
+            Telefona kurmak için aşağıdaki TiroidDefterim.apk dosyasını indir.
+            Uygulama ekranları ve yiyecek listesi buradan otomatik güncellenir; yeniden kurman gerekmez.
