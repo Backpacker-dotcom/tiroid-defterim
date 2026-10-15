@@ -79,6 +79,12 @@ public class Bridge {
         Reminder.schedule(ctx);
     }
 
+    /** İlaç hatırlatıcısını açar ya da (on=false, "İlaç kullanmıyorum") kapatır. */
+    @JavascriptInterface
+    public void setMedReminder(String hhmm, String name, boolean on) {
+        setReminder(on ? hhmm : "", name);
+    }
+
     @JavascriptInterface
     public void setWeightReminder(String hhmm, boolean on) {
         SharedPreferences.Editor e = prefs(ctx).edit();
