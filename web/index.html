@@ -1134,7 +1134,7 @@ function vSettings(){
 }
 
 /* ---------- Ekleme penceresi ---------- */
-function defaultMeal(){const h=new Date().getHours();return h<11?"kahvalti":h<16?"ogle":h<21?"aksam":"ara"}
+function defaultMeal(){const h=new Date().getHours();return h<5?"ara":h<11?"kahvalti":h<15?"ogle":h<18?"ara":h<22?"aksam":"ara"}
 function openAdd(f){
   const k=curDay(),today=isToday(k);
   let g=f.por||100, meal=f.meal||(today?defaultMeal():"ogle"), tm=today?nowHM():MEALT[meal], tmTouched=false, mealTouched=!!f.meal;
@@ -1867,7 +1867,7 @@ function doctorHTML(a,b,notes,withDaily){
    <div class="meta"><span>Rapor dönemi</span><b>${ld(a)} – ${ld(b)} (${len} gün)</b><span>Karşılaştırma</span><b>${hasPrev?`${ld(pa)} – ${ld(pb)}`:"Önceki kayıt yok"}</b><span>Takip başlangıcı</span><b>${ld(fk)}</b>
    <span>İlaç / plan</span><b>${nm?"İlaç kullanmıyor":`${esc(C.doseEnd?fmtDoseFull(C.doseEnd):medLabel())}${st.medTime?` · ${st.medTime}`:""}`}</b><span>Kalori hedefi</span><b>${st.kcal} kcal/gün</b>${st.goalW?`<span>Hedef kilo</span><b>${kg(+st.goalW)} kg</b>`:""}${st.heightCm?`<span>Boy${bmi?" / VKİ":""}</span><b>${st.heightCm} cm${bmi?" / "+nf(bmi,1):""}</b>`:""}</div></div>
   <section class="flow"><h2>Dönem karşılaştırması</h2><table class="cmp"><thead><tr><th>Ölçüt</th><th>Önceki dönem</th><th>Bu dönem</th><th>Değişim</th></tr></thead><tbody>${rows}</tbody></table>
-   <p class="cap">Önceki dönem, rapor dönemiyle aynı uzunlukta hemen önceki aralıktır. Yeşil iyileşme, kırmızı kötüleşme yönündeki değişimi gösterir.</p></section>
+   <p class="cap">Önceki dönem, rapor dönemiyle aynı uzunlukta hemen önceki aralıktır. Yeşil iyileşme, kırmızı kötüleşme yönündeki değişimi gösterir. Uygulamada “alındı” işaretlenmeyen günler atlanmış sayılır.</p></section>
   <section><h2>Bu dönemin özeti</h2><ul class="ev">${E.map(x=>`<li class="${x.l}">${esc(x.t)}</li>`).join("")||"<li>Yeterli kayıt yok.</li>"}</ul></section>
   ${doseSection(a,b)}
   ${labsSection(a,b)}
@@ -2035,7 +2035,7 @@ function confirmRestore(text){let v;try{v=JSON.parse(text)}catch(e){}
   document.body.appendChild(sc);
   sc.addEventListener("click",e=>{const b=e.target.closest("button");if(e.target===sc||(b&&b.id==="rsCancel")){sc.remove();return}if(!b)return;
     if(b.id==="rsOk"){const keep={lastBackup:S.settings.lastBackup,lastBackupPath:S.settings.lastBackupPath};S.settings={...DEFAULTS,...vs,...keep,welcomed:true};Object.assign(S.days,v.days);saveSettings();Object.keys(v.days).forEach(saveDay);pushReminder();sc.remove();toast(nd+" günlük kayıt yüklendi");render()}})}
-let tt;function toast(m){document.querySelectorAll(".toast").forEach(x=>x.remove());const t=document.createElement("div");t.className="toast";t.textContent=m;t.setAttribute("role","status");document.body.appendChild(t);clearTimeout(tt);tt=setTimeout(()=>t.remove(),2200)}
+let tt;function toast(m){document.querySelectorAll(".toast").forEach(x=>x.remove());const t=document.createElement("div");t.className="toast";if(document.querySelector(".scrim"))t.style.cssText="bottom:auto;top:calc(16px + env(safe-area-inset-top,0px))";t.textContent=m;t.setAttribute("role","status");document.body.appendChild(t);clearTimeout(tt);tt=setTimeout(()=>t.remove(),2200)}
 
 /* ---------- Render & olaylar ---------- */
 function render(){
