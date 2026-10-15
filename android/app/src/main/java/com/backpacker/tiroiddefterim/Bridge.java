@@ -122,6 +122,34 @@ public class Bridge {
     @JavascriptInterface
     public String version() { return BuildConfig.VERSION_NAME; }
 
+    // ---------- Adımsayar ----------
+    /** {"avail":sensör var mı,"perm":izin,"on":açık mı,"at":son okuma,"days":{"YYYY-MM-DD":adım}} */
+    @JavascriptInterface
+    public String stepsInfo() { return Steps.info(ctx); }
+
+    /** Adımsayarı açar/kapatır; gerekirse izin ister. Sonuç window.onSteps() ile bildirilir. */
+    @JavascriptInterface
+    public void stepsEnable(boolean on) {
+        Steps.sp(ctx).edit().putBoolean("on", on).apply();
+        if (on && !Steps.permitted(ctx) && Build.VERSION.SDK_INT >= 29) {
+            act.runOnUiThread(() -> act.requestPermissions(new String[]{Manifest.permission.ACTIVITY_RECOGNITION}, 11));
+            return;
+        }
+        Steps.schedule(ctx);
+        stepsRefresh();
+    }
+
+    /** Sayacı şimdi okur, bitince window.onSteps() çağrılır. */
+    @JavascriptInterface
+    public void stepsRefresh() {
+        if (!Steps.active(ctx)) { notifySteps(); return; }
+        Steps.sample(ctx, this::notifySteps);
+    }
+
+    void notifySteps() {
+        if (act instanceof MainActivity) ((MainActivity) act).js("window.onSteps&&window.onSteps()");
+    }
+
     // ---------- Takviyeler ----------
     @JavascriptInterface
     public void setSupplements(String json) {

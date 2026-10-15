@@ -60,6 +60,7 @@ public class Reminder {
             }
         } catch (Exception ignored) { }
         p.edit().putInt("suppCount", n).apply();
+        Steps.schedule(c);
     }
 
     static boolean valid(String t) {

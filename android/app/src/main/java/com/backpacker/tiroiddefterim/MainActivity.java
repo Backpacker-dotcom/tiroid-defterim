@@ -37,6 +37,20 @@ public class MainActivity extends Activity {
     };
     private WebView web;
     private ValueCallback<Uri[]> fileCb;
+    private Bridge bridge;
+
+    void js(final String code) {
+        runOnUiThread(() -> { if (web != null) web.evaluateJavascript(code, null); });
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int req, String[] perms, int[] res) {
+        super.onRequestPermissionsResult(req, perms, res);
+        if (req == 11) {
+            Steps.schedule(this);
+            if (bridge != null) bridge.stepsRefresh();
+        }
+    }
 
     @Override
     protected void onActivityResult(int req, int res, Intent data) {
@@ -59,7 +73,8 @@ public class MainActivity extends Activity {
         s.setDomStorageEnabled(true);
         s.setDatabaseEnabled(true);
         s.setTextZoom(100);
-        web.addJavascriptInterface(new Bridge(this), "Android");
+        bridge = new Bridge(this);
+        web.addJavascriptInterface(bridge, "Android");
         web.setWebChromeClient(new WebChromeClient() {
             @Override
             public boolean onShowFileChooser(WebView v, ValueCallback<Uri[]> cb, FileChooserParams params) {
@@ -165,6 +180,7 @@ public class MainActivity extends Activity {
     protected void onResume() {
         super.onResume();
         if (web != null) web.evaluateJavascript("window.onNativeResume&&window.onNativeResume()", null);
+        if (bridge != null && Steps.active(this)) bridge.stepsRefresh();
     }
 
     @Override
