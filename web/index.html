@@ -959,7 +959,8 @@ function vWeight(k){
     <div class="small" id="wErr" style="color:var(--bad)"></div></section>`;
 }
 let wEdit=false, medEdit=false;
-let vDay=null;const curDay=()=>{const t=todayKey();if(!vDay||vDay>t)vDay=t;return vDay};
+// vSeen: seçili günün en son "bugün" olduğu tarih. Kullanıcı bugündeyken gün değişirse (uygulama gece açık kaldıysa) yeni güne geçilir
+let vDay=null,vSeen=null;const curDay=()=>{const t=todayKey();if(!vDay||vDay>t||(vDay===vSeen&&vSeen!==t))vDay=t;vSeen=t;return vDay};
 const isToday=k=>k===todayKey();
 const dayWord=k=>isToday(k)?"Bugün":k===prevKey(todayKey())?"Dün":parseKey(k).toLocaleDateString("tr-TR",{day:"numeric",month:"long"});
 const MEALT={kahvalti:"09:30",ogle:"13:00",aksam:"19:30",ara:"16:00"};
@@ -1362,7 +1363,7 @@ function vLabs(){
   if(hLab){const g=G.find(x=>x[0]===hLab);if(!g){hLab=null;return vLabs()}const L=g[1],last=L[L.length-1];
     return `<button class="btn ghost sm" id="hlBack" style="align-self:flex-start">‹ Tahliller</button>
     <section class="card"><h2>${esc(labName(last))}</h2><p class="small muted" style="margin:2px 0 8px">Referans: ${last.lo!=null?numTR(last.lo):"–"} – ${last.hi!=null?numTR(last.hi):"–"} ${esc(last.u||"")}${hLab==="TSH"&&dosesL().length?" · mavi çizgiler doz değişikliği":""}</p>${labChart(L,hLab)||'<p class="small muted">Grafik için en az iki sonuç gerekiyor.</p>'}</section>
-    <section class="card">${L.slice().reverse().map(l=>{const[c,t]=labStatus(l);return `<div class="entry"><div class="n"><span class="nm">${numTR(l.v)} ${esc(l.u||"")}</span><span class="tag lab-${c}">${t}</span><small>${parseKey(l.date).toLocaleDateString("tr-TR",{day:"numeric",month:"long",year:"numeric"})}${doseOn(l.date)&&hLab==="TSH"?` · doz ${doseOn(l.date)} mcg`:""}${l.note?" · "+esc(l.note):""}</small></div><button class="x" data-ldel="${l.id}" aria-label="Sil">×</button></div>`}).join("")}</section>`}
+    <section class="card">${L.slice().reverse().map(l=>{const[c,t]=labStatus(l);return `<div class="entry"><div class="n"><span class="nm">${numTR(l.v)} ${esc(l.u||"")}</span><span class="tag lab-${c}">${t}</span><small>${parseKey(l.date).toLocaleDateString("tr-TR",{day:"numeric",month:"long",year:"numeric"})}${doseOn(l.date)&&hLab==="TSH"?` · doz ${esc(fmtDoseFull(doseOn(l.date)))}`:""}${l.note?" · "+esc(l.note):""}</small></div><button class="x" data-ldel="${l.id}" aria-label="Sil">×</button></div>`}).join("")}</section>`}
   const biot=suppsL().some(s=>/biotin/i.test(s.name));
   return `<button class="btn primary" id="labAdd">+ Tahlil sonucu ekle</button>
   ${biot?`<div class="notice warn">Biotin kullanıyorsun: tahlilden 2–3 gün önce bırakmazsan TSH ve sT4 sonuçları yanlış çıkabilir.</div>`:""}
