@@ -70,25 +70,28 @@ public class Bridge {
 
     @JavascriptInterface
     public void setReminder(String hhmm, String name) {
-        if (hhmm == null || !hhmm.matches("\\d{1,2}:\\d{2}")) return;
-        prefs(ctx).edit().putString("time", hhmm).putString("name", name == null ? "İlacım" : name).putBoolean("mon", true).apply();
-        Reminder.schedule(ctx);
-    }
-
-    /** İlaç hatırlatıcısını kurar ya da (on=false, "İlaç kullanmıyorum") tamamen kapatır. */
-    @JavascriptInterface
-    public void setMedReminder(String hhmm, String name, boolean on) {
-        SharedPreferences.Editor e = prefs(ctx).edit().putBoolean("mon", on);
-        if (hhmm != null && hhmm.matches("\\d{1,2}:\\d{2}")) e.putString("time", hhmm);
-        if (name != null && !name.isEmpty()) e.putString("name", name);
+        SharedPreferences.Editor e = prefs(ctx).edit().putString("name", name == null || name.isEmpty() ? "İlacım" : name);
+        // Boş saat: kullanıcı ilaç bildirimi istemiyor
+        if (hhmm == null || hhmm.isEmpty()) e.remove("time");
+        else if (Reminder.valid(hhmm)) e.putString("time", hhmm);
+        else return;
         e.apply();
         Reminder.schedule(ctx);
     }
 
+    /** İlaç hatırlatıcısını açar ya da (on=false, "İlaç kullanmıyorum") kapatır. */
+    @JavascriptInterface
+    public void setMedReminder(String hhmm, String name, boolean on) {
+        setReminder(on ? hhmm : "", name);
+    }
+
     @JavascriptInterface
     public void setWeightReminder(String hhmm, boolean on) {
-        if (hhmm == null || !hhmm.matches("\\d{1,2}:\\d{2}")) return;
-        prefs(ctx).edit().putString("wtime", hhmm).putBoolean("won", on).apply();
+        SharedPreferences.Editor e = prefs(ctx).edit();
+        if (hhmm == null || hhmm.isEmpty()) e.remove("wtime").putBoolean("won", false);
+        else if (Reminder.valid(hhmm)) e.putString("wtime", hhmm).putBoolean("won", on);
+        else return;
+        e.apply();
         Reminder.schedule(ctx);
     }
 

@@ -36,9 +36,13 @@ public class Reminder {
         SharedPreferences p = Bridge.prefs(c);
         AlarmManager am = (AlarmManager) c.getSystemService(Context.ALARM_SERVICE);
         if (am == null) return;
-        if (p.getBoolean("mon", true)) scheduleAt(c, am, pending(c, ACTION_REMIND, 1), p.getString("time", "08:45"));
+        // Saatler yalnızca kullanıcının kurulumda/ayarlarda girdiği değerlerden gelir.
+        // Kurulum bitmeden (saat kaydedilmeden) hiçbir bildirim kurulmaz.
+        String time = p.getString("time", null);
+        if (valid(time)) scheduleAt(c, am, pending(c, ACTION_REMIND, 1), time);
         else am.cancel(pending(c, ACTION_REMIND, 1));
-        if (p.getBoolean("won", true)) scheduleAt(c, am, pending(c, ACTION_WEIGHT, 4), p.getString("wtime", "08:50"));
+        String wtime = p.getString("wtime", null);
+        if (p.getBoolean("won", false) && valid(wtime)) scheduleAt(c, am, pending(c, ACTION_WEIGHT, 4), wtime);
         else am.cancel(pending(c, ACTION_WEIGHT, 4));
         // Takviyeler
         int old = p.getInt("suppCount", 0);
@@ -48,20 +52,27 @@ public class Reminder {
             JSONArray arr = new JSONArray(p.getString("supps", "[]"));
             for (int i = 0; i < arr.length() && i < MAX_SUPP; i++) {
                 JSONObject o = arr.getJSONObject(i);
-                scheduleAt(c, am, suppPending(c, ACTION_SUPP, SUPP_BASE + i, i, o.optString("id"), o.optString("name")), o.optString("time", "13:00"));
+                PendingIntent pi = suppPending(c, ACTION_SUPP, SUPP_BASE + i, i, o.optString("id"), o.optString("name"));
+                String st = o.optString("time", "");
+                if (valid(st)) scheduleAt(c, am, pi, st);
+                else am.cancel(pi);
                 n++;
             }
         } catch (Exception ignored) { }
         p.edit().putInt("suppCount", n).apply();
     }
 
+    static boolean valid(String t) {
+        return t != null && t.matches("\\d{1,2}:\\d{2}");
+    }
+
     private static void scheduleAt(Context c, AlarmManager am, PendingIntent pi, String t) {
-        int h = 8, m = 0;
+        int h, m;
         try {
             String[] parts = t.split(":");
             h = Integer.parseInt(parts[0]);
             m = Integer.parseInt(parts[1]);
-        } catch (Exception ignored) { }
+        } catch (Exception e) { return; }
         Calendar cal = Calendar.getInstance();
         cal.set(Calendar.HOUR_OF_DAY, h);
         cal.set(Calendar.MINUTE, m);
