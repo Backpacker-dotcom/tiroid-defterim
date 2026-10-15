@@ -1493,39 +1493,129 @@ function quickHTML(){if(q.trim()||cat!=="all")return "";const {favs,recent,freq}
 
 /* ---------- Egzersiz ---------- */
 // MET değerleri: Compendium of Physical Activities (2011/2024) yaklaşık değerleri
-const EXCAT=[["out","Dış alan"],["in","İç alan"],["str","Dambıl / ağırlık"]];
+const EXCAT=[["out","Dış alan"],["in","İç alan"],["sport","Spor dalları"],["str","Ağırlık / güç"]];
+// str türü: 1 çift dambıl, 0 tek dambıl, 2 halter/makine/kettlebell (tek ağırlık), -1 vücut ağırlığı; 5. alan alt grup
 const EXS=[
+ // ---- Dış alan
  ["walk","Yürüyüş","out",[["Yavaş",2.8],["Normal",3.5],["Tempolu",4.3]]],
  ["fastwalk","Hızlı yürüyüş","out",[["Hızlı",5.0]]],
+ ["nordic","Nordic walking (batonlu)","out",[["Normal",4.8],["Tempolu",6.0]]],
  ["hike","Doğa yürüyüşü","out",[["Düz",5.3],["Yokuşlu",6.5]]],
+ ["trek","Dağ yürüyüşü (sırt çantalı)","out",[["Orta",7.0],["Ağır",7.8]]],
+ ["jog","Hafif tempo koşu (jogging)","out",[["Hafif",7.0]]],
  ["run","Koşu","out",[["Hafif (8 km/s)",8.3],["Orta (10 km/s)",9.8],["Hızlı (12 km/s)",11.5]]],
+ ["trail","Arazi koşusu (trail)","out",[["Orta",9.0]]],
  ["bike","Bisiklet","out",[["Rahat",4.0],["Orta",6.8],["Hızlı",10.0]]],
- ["swim","Yüzme","out",[["Rahat",6.0],["Orta",8.3],["Hızlı",9.8]]],
+ ["mtb","Dağ bisikleti","out",[["Orta",8.5]]],
+ ["ebike","Elektrikli bisiklet","out",[["Normal",3.5]]],
+ ["swim","Yüzme (denizde/havuzda)","out",[["Rahat",6.0],["Orta",8.3],["Hızlı",9.8]]],
+ ["seawalk","Denizde yürüme / su içinde yürüyüş","out",[["Normal",4.5]]],
+ ["kayak","Kano / kayak","out",[["Rahat",3.5],["Orta",5.0]]],
+ ["sup","Kürek sörfü (SUP)","out",[["Normal",6.0]]],
+ ["surf","Sörf / rüzgar sörfü","out",[["Normal",3.0],["Hareketli",5.0]]],
+ ["skate","Paten","out",[["Rahat",5.0],["Hızlı",9.8]]],
+ ["ski","Kayak (kış)","out",[["Hafif",4.3],["Orta",5.3],["Yoğun",8.0]]],
+ ["snowshoe","Kar ayakkabısıyla yürüyüş","out",[["Normal",5.3]]],
+ ["climb","Kaya tırmanışı","out",[["Orta",5.8],["Zor",7.5]]],
+ ["horse","Ata binme","out",[["Yürüyüş",3.8],["Tırıs",5.8]]],
  ["garden","Bahçe işleri","out",[["Hafif",3.0],["Ağır",4.5]]],
- ["football","Futbol","out",[["Hobi",7.0]]],
- ["tennis","Tenis","out",[["Çiftler",4.5],["Tekler",7.3]]],
- ["basket","Basketbol","out",[["Hobi",6.5]]],
+ ["wood","Odun kırma / ağır bahçe işi","out",[["Ağır",6.3]]],
+ ["dogwalk","Köpek gezdirme","out",[["Normal",3.0]]],
  ["stairs","Merdiven çıkma","out",[["Normal",4.0],["Hızlı",8.8]]],
- ["dance","Dans","out",[["Hafif",4.5],["Hareketli",7.3]]],
+ ["playground","Çocukla oyun (koşmalı)","out",[["Orta",5.8]]],
+ ["outfit","Açık hava spor aletleri (park)","out",[["Hafif",3.5],["Orta",5.0]]],
+ // ---- İç alan
  ["tread_w","Koşu bandında yürüyüş","in",[["Normal",3.5],["Tempolu",4.3],["Eğimli",6.0]]],
- ["tread_r","Koşu bandında koşu","in",[["Hafif",8.3],["Orta",9.8]]],
- ["ellip","Eliptik","in",[["Hafif",4.6],["Orta",5.0],["Yoğun",6.5]]],
- ["sbike","Kondisyon bisikleti","in",[["Hafif",3.5],["Orta",6.8],["Yoğun",8.8]]],
- ["row","Kürek makinesi","in",[["Orta",7.0],["Yoğun",8.5]]],
- ["stepper","Merdiven makinesi","in",[["Orta",9.0]]],
+ ["tread_r","Koşu bandında koşu","in",[["Hafif",8.3],["Orta",9.8],["Hızlı",11.0]]],
+ ["ellip","Eliptik bisiklet","in",[["Hafif",4.6],["Orta",5.0],["Yoğun",6.5]]],
+ ["sbike","Kondisyon bisikleti (dik)","in",[["Hafif",3.5],["Orta",6.8],["Yoğun",8.8]]],
+ ["recumb","Yatay (sırt destekli) bisiklet","in",[["Hafif",3.5],["Orta",5.5],["Yoğun",7.0]]],
+ ["spin","Spinning dersi","in",[["Orta",8.5],["Yoğun",10.0]]],
+ ["airbike","Air bike (kollu bisiklet)","in",[["Orta",7.5],["Yoğun",10.0]]],
+ ["armbike","Kol bisikleti (el ergometresi)","in",[["Hafif",2.8],["Orta",4.3]]],
+ ["row","Kürek makinesi","in",[["Hafif",4.8],["Orta",7.0],["Yoğun",8.5]]],
+ ["skierg","Kayak ergometresi (SkiErg)","in",[["Orta",7.0],["Yoğun",9.0]]],
+ ["stepper","Merdiven makinesi (stepper)","in",[["Orta",9.0]]],
+ ["stairmill","Yürüyen merdiven makinesi","in",[["Orta",8.8],["Yoğun",10.0]]],
+ ["vclimb","Tırmanma makinesi (VersaClimber)","in",[["Orta",8.0],["Yoğun",10.5]]],
+ ["jumprope","İp atlama","in",[["Yavaş",8.8],["Orta",11.8]]],
+ ["rebound","Mini trambolin","in",[["Normal",4.5]]],
  ["aerobic","Aerobik / step","in",[["Düşük tempo",5.0],["Yüksek tempo",7.3]]],
  ["zumba","Zumba","in",[["Normal",6.5]]],
+ ["dancefit","Dans dersi (latin, modern)","in",[["Hafif",4.5],["Hareketli",7.3]]],
  ["hiit","HIIT / interval","in",[["Yoğun",8.0]]],
- ["pilates","Pilates","in",[["Normal",3.0]]],
+ ["tabata","Tabata","in",[["Yoğun",8.5]]],
+ ["circuit","Devre antrenmanı (circuit)","in",[["Orta",4.3],["Yoğun",8.0]]],
+ ["crossfit","CrossFit / fonksiyonel antrenman","in",[["Orta",5.6],["Yoğun",8.0]]],
+ ["bootcamp","Bootcamp dersi","in",[["Yoğun",7.5]]],
+ ["trx","TRX / askı antrenmanı","in",[["Orta",4.5],["Yoğun",6.0]]],
+ ["bodypump","Body pump (ağırlıklı ders)","in",[["Orta",5.5]]],
+ ["pilates","Pilates (mat)","in",[["Normal",3.0]]],
+ ["reformer","Reformer pilates","in",[["Orta",3.5],["Yoğun",4.5]]],
+ ["barre","Barre","in",[["Normal",3.5]]],
  ["yoga","Yoga","in",[["Hafif",2.5],["Güç yogası",4.0]]],
- ["stretch","Esneme","in",[["Hafif",2.3]]],
+ ["hotyoga","Sıcak yoga","in",[["Normal",3.5]]],
+ ["taichi","Tai chi / qigong","in",[["Normal",3.0]]],
+ ["stretch","Esneme / mobilite","in",[["Hafif",2.3]]],
+ ["foam","Foam roller / rahatlama","in",[["Hafif",2.0]]],
  ["body","Vücut ağırlığı egzersizi","in",[["Orta",3.8],["Yoğun",8.0]]],
- ["curl","Biceps curl","str",1],["hammer","Çekiç curl","str",1],["spress","Omuz press","str",1],["lateral","Yana açış (lateral raise)","str",1],
- ["front","Öne kaldırış","str",1],["bench","Dambıl göğüs press","str",1],["fly","Dambıl fly","str",1],["row1","Tek kol row","str",0],
- ["bentrow","Eğilerek row","str",1],["triext","Triceps extension","str",0],["kick","Triceps kickback","str",1],["goblet","Goblet squat","str",0],
- ["lunge","Lunge (hamle)","str",1],["rdl","Romanian deadlift","str",1],["stepup","Step-up","str",1],["calf","Baldır kaldırma","str",1],
- ["shrug","Shrug","str",1],["twist","Russian twist","str",0],["thruster","Thruster","str",1],["farmer","Farmer's walk","str",1],
- ["pushup","Şınav","str",-1],["squat_bw","Squat (vücut ağırlığı)","str",-1],["crunch","Mekik","str",-1],["plank","Plank","str",-1]];
+ ["aqua","Su aerobiği","in",[["Normal",5.3]]],
+ ["poolrun","Havuzda koşu / su jimnastiği","in",[["Orta",6.0]]],
+ ["boxfit","Kick boks / boks dersi (torba)","in",[["Orta",5.5],["Yoğun",7.8]]],
+ ["wallclimb","Duvar tırmanışı (salon)","in",[["Orta",5.8],["Zor",7.5]]],
+ ["housework","Ev işleri (temizlik)","in",[["Hafif",2.8],["Ağır",3.8]]],
+ // ---- Spor dalları
+ ["football","Futbol","sport",[["Hobi",7.0],["Maç",10.0]]],
+ ["halisaha","Halı saha","sport",[["Hobi",7.0],["Yoğun",9.0]]],
+ ["basket","Basketbol","sport",[["Pota atışı",4.5],["Hobi",6.5],["Maç",8.0]]],
+ ["volley","Voleybol","sport",[["Hobi",3.0],["Maç",4.0]]],
+ ["beachvolley","Plaj voleybolu","sport",[["Normal",8.0]]],
+ ["tennis","Tenis","sport",[["Çiftler",4.5],["Tekler",7.3]]],
+ ["padel","Padel","sport",[["Normal",6.0]]],
+ ["tabletennis","Masa tenisi","sport",[["Normal",4.0]]],
+ ["badminton","Badminton","sport",[["Hobi",5.5],["Maç",7.0]]],
+ ["squash","Squash","sport",[["Normal",7.3]]],
+ ["handball","Hentbol","sport",[["Normal",8.0]]],
+ ["golf","Golf (yürüyerek)","sport",[["Normal",4.8]]],
+ ["bowling","Bowling","sport",[["Normal",3.0]]],
+ ["boxing","Boks (idman / ring)","sport",[["İdman",7.8],["Sparring",12.8]]],
+ ["martial","Uzak doğu sporları (karate, tekvando, judo)","sport",[["Normal",10.3]]],
+ ["wrestle","Güreş","sport",[["Normal",6.0]]],
+ ["fencing","Eskrim","sport",[["Normal",6.0]]],
+ ["archery","Okçuluk","sport",[["Normal",4.3]]],
+ ["frisbee","Frizbi","sport",[["Normal",3.0]]],
+ ["gymnastics","Jimnastik","sport",[["Normal",3.8]]],
+ ["iceskate","Buz pateni","sport",[["Normal",7.0]]],
+ ["folk","Halk oyunları","sport",[["Normal",4.5],["Hareketli",6.5]]],
+ // ---- Ağırlık / güç
+ ["curl","Biceps curl","str",1,"Dambıl"],["hammer","Çekiç curl","str",1,"Dambıl"],["conc","Konsantrasyon curl","str",0,"Dambıl"],
+ ["spress","Omuz press","str",1,"Dambıl"],["arnold","Arnold press","str",1,"Dambıl"],["lateral","Yana açış (lateral raise)","str",1,"Dambıl"],
+ ["front","Öne kaldırış","str",1,"Dambıl"],["revfly","Arka omuz (reverse fly)","str",1,"Dambıl"],["upright","Upright row","str",1,"Dambıl"],
+ ["bench","Dambıl göğüs press","str",1,"Dambıl"],["incline","Eğimli dambıl press","str",1,"Dambıl"],["fly","Dambıl fly","str",1,"Dambıl"],["pullover","Pullover","str",0,"Dambıl"],
+ ["row1","Tek kol row","str",0,"Dambıl"],["bentrow","Eğilerek row","str",1,"Dambıl"],["shrug","Shrug","str",1,"Dambıl"],
+ ["triext","Triceps extension","str",0,"Dambıl"],["kick","Triceps kickback","str",1,"Dambıl"],["skull","Skull crusher","str",1,"Dambıl"],
+ ["goblet","Goblet squat","str",0,"Dambıl"],["dbsquat","Dambıl squat","str",1,"Dambıl"],["sumo","Sumo squat","str",0,"Dambıl"],["lunge","Lunge (hamle)","str",1,"Dambıl"],
+ ["bulg","Bulgarian split squat","str",1,"Dambıl"],["rdl","Romanian deadlift","str",1,"Dambıl"],["stepup","Step-up","str",1,"Dambıl"],["hipthr","Hip thrust","str",0,"Dambıl"],
+ ["calf","Baldır kaldırma","str",1,"Dambıl"],["twist","Russian twist","str",0,"Dambıl"],["sidebend","Yana eğilme","str",0,"Dambıl"],
+ ["thruster","Thruster","str",1,"Dambıl"],["farmer","Farmer's walk","str",1,"Dambıl"],["renegade","Renegade row","str",1,"Dambıl"],
+ ["bbsquat","Halter squat","str",2,"Halter"],["deadlift","Deadlift","str",2,"Halter"],["bbbench","Bench press (halter)","str",2,"Halter"],["ohp","Ayakta omuz press (halter)","str",2,"Halter"],
+ ["bbrow","Halter row","str",2,"Halter"],["bbcurl","Halter / EZ bar curl","str",2,"Halter"],["bbhip","Halter hip thrust","str",2,"Halter"],
+ ["kbswing","Kettlebell swing","str",2,"Kettlebell"],["kbgoblet","Kettlebell goblet squat","str",2,"Kettlebell"],["kbclean","Kettlebell clean & press","str",2,"Kettlebell"],["tgu","Turkish get-up","str",2,"Kettlebell"],
+ ["legpress","Leg press","str",2,"Makine"],["legext","Bacak açma (leg extension)","str",2,"Makine"],["legcurl","Bacak bükme (leg curl)","str",2,"Makine"],
+ ["abduct","Kalça açma (abduktör)","str",2,"Makine"],["adduct","Kalça kapama (adduktör)","str",2,"Makine"],["latpull","Lat pulldown","str",2,"Makine"],
+ ["seatrow","Oturarak kablo row","str",2,"Makine"],["chestpress","Göğüs press makinesi","str",2,"Makine"],["pecdeck","Pec deck (kelebek)","str",2,"Makine"],
+ ["shpress","Omuz press makinesi","str",2,"Makine"],["cablecurl","Kablo biceps curl","str",2,"Makine"],["pushdown","Triceps pushdown (kablo)","str",2,"Makine"],
+ ["facepull","Face pull","str",2,"Makine"],["smith","Smith makinesinde squat","str",2,"Makine"],["hacksq","Hack squat","str",2,"Makine"],
+ ["calfm","Baldır makinesi","str",2,"Makine"],["abm","Karın makinesi","str",2,"Makine"],["backext","Sırt ekstansiyonu","str",-1,"Makine"],
+ ["band","Direnç bandı egzersizi","str",-1,"Bant / top"],["medball","Sağlık topu (medicine ball)","str",2,"Bant / top"],["slam","Ball slam","str",2,"Bant / top"],
+ ["pushup","Şınav","str",-1,"Vücut ağırlığı"],["kneepush","Dizüstü şınav","str",-1,"Vücut ağırlığı"],["squat_bw","Squat (vücut ağırlığı)","str",-1,"Vücut ağırlığı"],
+ ["bwlunge","Lunge (ağırlıksız)","str",-1,"Vücut ağırlığı"],["glute","Köprü (glute bridge)","str",-1,"Vücut ağırlığı"],["pullup","Barfiks","str",-1,"Vücut ağırlığı"],
+ ["dip","Dips (paralel bar)","str",-1,"Vücut ağırlığı"],["burpee","Burpee","str",-1,"Vücut ağırlığı"],["mountain","Mountain climber","str",-1,"Vücut ağırlığı"],
+ ["jumpjack","Jumping jack","str",-1,"Vücut ağırlığı"],["jumpsq","Zıplamalı squat","str",-1,"Vücut ağırlığı"],["crunch","Mekik","str",-1,"Vücut ağırlığı"],
+ ["legraise","Bacak kaldırma","str",-1,"Vücut ağırlığı"],["bicycle","Bisiklet mekiği","str",-1,"Vücut ağırlığı"],["superman","Superman","str",-1,"Vücut ağırlığı"],
+ ["birddog","Bird dog","str",-1,"Vücut ağırlığı"],["plank","Plank","str",-1,"Vücut ağırlığı"],["sideplank","Yan plank","str",-1,"Vücut ağırlığı"],
+ ["wallsit","Duvarda oturma (wall sit)","str",-1,"Vücut ağırlığı"],["hang","Barda asılma","str",-1,"Vücut ağırlığı"]];
+const TIMED=new Set(["plank","sideplank","wallsit","hang"]);
 const STR_LV=[["Hafif",3.5],["Orta",5.0],["Yoğun",6.0]];
 const exDef=c=>EXS.find(x=>x[0]===c);
 const exL=k=>(S.days[k]&&S.days[k].ex)||[];
@@ -1548,6 +1638,7 @@ function openEx(editId,preset){
   sc.innerHTML=`<div class="sheet" role="dialog" aria-modal="true" aria-label="Egzersiz"><h2 style="font-size:18px">${old?"Egzersizi düzenle":"Egzersiz ekle"}</h2>
    ${isToday(k)?"":`<div class="pastnote"><span><b>${parseKey(k).toLocaleDateString("tr-TR",{day:"numeric",month:"long"})}</b> gününe eklenecek</span></div>`}
    <div class="seg" role="group" aria-label="Tür" id="exCats">${EXCAT.map(([c,l])=>`<button data-xcat="${c}" aria-pressed="${c===cat}">${l}</button>`).join("")}</div>
+   <div class="search" id="exSearch"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="xQ" type="search" placeholder="Hareket ara: eliptik, squat, padel…" autocomplete="off" aria-label="Hareket ara"></div>
    <div class="chips" id="exList"></div>
    <div id="exForm"></div>
    ${kg?"":`<div class="notice warn">Kilon kayıtlı olmadığı için 70 kg varsayıldı. Kilonu girersen hesap daha doğru olur.</div>`}
@@ -1555,7 +1646,14 @@ function openEx(editId,preset){
    <div class="row">${old?`<button class="btn ghost" id="exDel" style="color:var(--bad)">Sil</button>`:""}<button class="btn ghost" id="exCancel">Vazgeç</button><button class="btn primary" id="exOk">${old?"Kaydet":"Ekle"}</button></div></div>`;
   document.body.appendChild(sc);
   const W=kg||70;
-  const list=()=>{$("#exList").innerHTML=EXS.filter(x=>x[2]===cat).map(x=>`<button class="chip" data-xc="${x[0]}" aria-pressed="${x[0]===code}">${esc(x[1])}</button>`).join("")+(cat!=="str"?`<button class="chip" data-xc="other" aria-pressed="${code==="other"}">Diğer</button>`:"")};
+  let xq="",pick=!code;
+  const list=()=>{const box=$("#exList"),sb=$("#exSearch");
+    if(!pick&&code){const d=exDef(code);sb.style.display="none";box.innerHTML=`<button class="chip" aria-pressed="true" data-xchange="1">${esc(code==="other"?"Diğer":d[1])}</button><button class="chip" data-xchange="1">Değiştir ›</button>`;return}
+    sb.style.display="";const qq=trLower(xq.trim());
+    const L=qq?EXS.filter(x=>trLower(x[1]).includes(qq)):EXS.filter(x=>x[2]===cat),chip=x=>`<button class="chip" data-xc="${x[0]}" aria-pressed="${x[0]===code}">${esc(x[1])}</button>`;
+    if(qq){box.innerHTML=L.length?L.map(chip).join(""):`<span class="small muted">Bulunamadı. “Diğer” ile kendin yazabilirsin.</span><button class="chip" data-xc="other">Diğer</button>`;return}
+    box.innerHTML=(cat==="str"?[...new Set(L.map(x=>x[4]))].map(g=>`<div class="label" style="width:100%;margin-top:4px">${g}</div>`+L.filter(x=>x[4]===g).map(chip).join("")).join(""):L.map(chip).join(""))+(cat!=="str"?`<button class="chip" data-xc="other" aria-pressed="${code==="other"}">Diğer</button>`:"");
+  };
   const form=()=>{const box=$("#exForm");if(!code){box.innerHTML=`<p class="small muted" style="margin:0">Yukarıdan bir hareket seç.</p>`;return}
     const def=exDef(code),t0=old&&old.t?old.t:(isToday(k)?nowHM():"18:00");
     if(code==="other"){box.innerHTML=`<div class="field"><label for="xN">Ne yaptın?</label><input id="xN" value="${esc(old&&old.c==="other"?old.n:"")}" placeholder="Örn. bahçede odun kırdım"></div>
@@ -1568,9 +1666,9 @@ function openEx(editId,preset){
        <div class="preview" id="xPrev" style="grid-template-columns:repeat(2,1fr)"></div>`}
     else{const bw=def[3]===-1,last=lastStr(code,k),o=old&&old.c===code?old:last?last.e:null;if(o&&o.lv){const i=STR_LV.findIndex(x=>x[0]===o.lv);if(i>=0)lvI=i}else lvI=1;
       box.innerHTML=`${last&&!old?`<div class="notice">Son kayıt (${fmtShort(last.k)}): <b>${last.e.sets}×${last.e.reps}${last.e.kg?` · ${numTR(last.e.kg)} kg`:""}</b></div>`:""}
-       <div class="trow"><div class="field"><label for="xS">Set</label><input id="xS" type="number" inputmode="numeric" value="${o?o.sets:3}"></div><div class="field"><label for="xR">${code==="plank"?"Süre (sn)":"Tekrar"}</label><input id="xR" type="number" inputmode="numeric" value="${o?o.reps:(code==="plank"?30:12)}"></div>${bw?"":`<div class="field"><label for="xKg">Dambıl kg</label><input id="xKg" type="text" inputmode="decimal" value="${o&&o.kg?numTR(o.kg):"5"}"></div>`}</div>
-       ${bw?"":`<div class="chips">${[1,2,3,4,5,6,7,8,10,12,15,20].map(v=>`<button class="chip" data-xkg="${v}">${v} kg</button>`).join("")}</div>
-       <label style="display:flex;gap:10px;align-items:center"><input id="xPair" type="checkbox" ${(o?o.pair:def[3]===1)?"checked":""} style="width:20px;height:20px"><span>İki dambılla (her elde bir)</span></label>`}
+       <div class="trow"><div class="field"><label for="xS">Set</label><input id="xS" type="number" inputmode="numeric" value="${o?o.sets:3}"></div><div class="field"><label for="xR">${TIMED.has(code)?"Süre (sn)":"Tekrar"}</label><input id="xR" type="number" inputmode="numeric" value="${o?o.reps:(TIMED.has(code)?30:12)}"></div>${bw?"":`<div class="field"><label for="xKg">${def[3]===2?"Ağırlık kg":"Dambıl kg"}</label><input id="xKg" type="text" inputmode="decimal" value="${o&&o.kg?numTR(o.kg):"5"}"></div>`}</div>
+       ${bw?"":`<div class="chips">${(def[3]===2?[4,6,8,10,12,16,20,25,30,40,50,60,80,100]:[1,2,3,4,5,6,7,8,10,12,15,20]).map(v=>`<button class="chip" data-xkg="${v}">${v} kg</button>`).join("")}</div>
+       ${def[3]===2?"":`<label style="display:flex;gap:10px;align-items:center"><input id="xPair" type="checkbox" ${(o?o.pair:def[3]===1)?"checked":""} style="width:20px;height:20px"><span>İki dambılla (her elde bir)</span></label>`}`}
        <div class="seg" role="group" aria-label="Yoğunluk">${STR_LV.map(([l],i)=>`<button data-xlv="${i}" aria-pressed="${i===lvI}">${l}</button>`).join("")}</div>
        <div class="trow"><div class="field"><label for="xM">Süre (dk, tahmini)</label><input id="xM" type="number" inputmode="numeric" value="${old&&old.c===code?old.min:""}"></div><div class="field"><label for="xT">Saat</label><input id="xT" type="time" value="${t0}"></div></div>
        <div class="preview" id="xPrev" style="grid-template-columns:repeat(3,1fr)"></div>`}
@@ -1581,16 +1679,17 @@ function openEx(editId,preset){
     if(code==="other"){const kc=pf(($("#xK")||{}).value);return{min:m,kcal:kc>0?kc:kcalMET(4,W,m),met:4}}
     const def=exDef(code);if(def[2]!=="str"){const [l,met]=def[3][lvI];return{min:m,kcal:kcalMET(met,W,m),met,lv:l}}
     const sets=Math.max(1,Math.round(pf($("#xS").value))),reps=Math.max(1,Math.round(pf($("#xR").value))),kgv=$("#xKg")?pf($("#xKg").value):0,pair=$("#xPair")?$("#xPair").checked:false;
-    const est=Math.max(1,Math.round(sets*((code==="plank"?reps:reps*4)+75)/60));let mm=m;if(!minTouched||!m){mm=est;if($("#xM"))$("#xM").value=est}
+    const est=Math.max(1,Math.round(sets*((TIMED.has(code)?reps:reps*4)+75)/60));let mm=m;if(!minTouched||!m){mm=est;if($("#xM"))$("#xM").value=est}
     const [l,met]=STR_LV[lvI];return{min:mm,kcal:kcalMET(met,W,mm),met,lv:l,sets,reps,kg:kgv,pair,vol:sets*reps*kgv*(pair?2:1)}};
   const upd=()=>{const r=calc(),p=$("#xPrev");if(!r||!p)return;
-    p.innerHTML=`<div><b>${numTR(r.kcal,0)}</b><span>kcal yakılır</span></div><div><b>${numTR(r.min,0)}</b><span>dakika</span></div>${r.vol?`<div><b>${numTR(r.vol,0)}</b><span>kg toplam yük</span></div>`:r.sets?`<div><b>${r.sets}×${r.reps}</b><span>set × ${code==="plank"?"sn":"tekrar"}</span></div>`:""}`};
+    p.innerHTML=`<div><b>${numTR(r.kcal,0)}</b><span>kcal yakılır</span></div><div><b>${numTR(r.min,0)}</b><span>dakika</span></div>${r.vol?`<div><b>${numTR(r.vol,0)}</b><span>kg toplam yük</span></div>`:r.sets?`<div><b>${r.sets}×${r.reps}</b><span>set × ${TIMED.has(code)?"sn":"tekrar"}</span></div>`:""}`};
   list();form();
-  sc.addEventListener("input",e=>{if(e.target.id==="xM")minTouched=true;upd()});
+  sc.addEventListener("input",e=>{if(e.target.id==="xQ"){xq=e.target.value;pick=true;list();return}if(e.target.id==="xM")minTouched=true;upd()});
   sc.addEventListener("change",upd);
   sc.addEventListener("click",e=>{const b=e.target.closest("button");if(e.target===sc||(b&&b.id==="exCancel")){sc.remove();return}if(!b)return;
-    if(b.dataset.xcat){cat=b.dataset.xcat;code=null;sc.querySelectorAll("[data-xcat]").forEach(x=>x.setAttribute("aria-pressed",x===b));list();form()}
-    if(b.dataset.xc){code=b.dataset.xc;lvI=0;minTouched=false;list();form()}
+    if(b.dataset.xchange){pick=true;list();return}
+    if(b.dataset.xcat){cat=b.dataset.xcat;code=null;pick=true;xq="";$("#xQ").value="";sc.querySelectorAll("[data-xcat]").forEach(x=>x.setAttribute("aria-pressed",x===b));list();form()}
+    if(b.dataset.xc){code=b.dataset.xc;if(code!=="other"){cat=exDef(code)[2];sc.querySelectorAll("[data-xcat]").forEach(x=>x.setAttribute("aria-pressed",x.dataset.xcat===cat))}pick=false;xq="";$("#xQ").value="";lvI=0;minTouched=false;list();form()}
     if(b.dataset.xlv){lvI=+b.dataset.xlv;b.parentNode.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b));upd()}
     if(b.dataset.xmin){$("#xM").value=b.dataset.xmin;minTouched=true;upd()}
     if(b.dataset.xkg){$("#xKg").value=b.dataset.xkg;upd()}
@@ -1616,7 +1715,7 @@ function vSport(){
     <div class="macro"><div class="head"><span><b>Güç çalışması</b></span><span>${X.str} / 2 gün</span></div><div class="bar"><i style="width:${Math.min(1,X.str/2)*100}%;background:var(--good)"></i></div></div>
     <div class="small muted">Genel öneri: haftada en az 150 dk orta tempolu hareket ve 2 gün kas güçlendirme. Haşimato'da yorgunluk dalgalanabilir; kendini zorlamadan, düzenli yapmak daha önemli.</div></section>
   ${hist.length?`<section class="card"><h2>Önceki egzersizler</h2><div style="margin-top:6px">${hist.map(x=>{const L=exL(x);return `<div class="entry"><button class="n eb" data-exday="${x}"><span class="nm">${dayWord(x)}</span><small>${L.map(e=>esc(e.n)+(e.sets?` ${e.sets}×${e.reps}${e.kg?` · ${numTR(e.kg)} kg`:""}`:` ${numTR(e.min,0)} dk`)).join(", ")}</small></button><span class="k">−${numTR(burnOf(S.days[x]),0)}</span></div>`}).join("")}</div></section>`:""}`}
-function exStats(keys){const R={days:0,min:0,kcal:0,str:0,byCat:{out:0,in:0,str:0},act:{},strP:{},weeks:[]};
+function exStats(keys){const R={days:0,min:0,kcal:0,str:0,byCat:{out:0,in:0,sport:0,str:0},act:{},strP:{},weeks:[]};
   keys.forEach(k=>{const L=exL(k);if(!L.length)return;R.days++;let st=false;L.forEach(e=>{R.min+=+e.min||0;R.kcal+=+e.kcal||0;R.byCat[e.cat]=(R.byCat[e.cat]||0)+(+e.min||0);
     const a=R.act[e.n]||(R.act[e.n]={n:e.n,cat:e.cat,c:0,min:0,kcal:0});a.c++;a.min+=+e.min||0;a.kcal+=+e.kcal||0;
     if(e.cat==="str"&&e.sets){st=true;const p=R.strP[e.n]||(R.strP[e.n]={n:e.n,c:0,first:null,last:null,maxKg:0,bestVol:0});p.c++;if(!p.first)p.first={k,e};p.last={k,e};p.maxKg=Math.max(p.maxKg,+e.kg||0);p.bestVol=Math.max(p.bestVol,(e.sets*e.reps*(e.kg||0)*(e.pair?2:1)))}});if(st)R.str++});
@@ -2096,13 +2195,13 @@ function rxSymHeat(keys){const rows=SYMS.filter(([id])=>keys.some(k=>{const s=(S
 const kpi=(icon,label,val,sub,tone)=>`<div class="kpi ${tone||""}"><div class="kl">${ico(icon,null,14)}${label}</div><div class="kv">${val}</div><div class="ks">${sub||""}</div></div>`;
 const dlt=(cur,prev,dir,fmt,unit)=>{if(prev==null||cur==null||isNaN(prev)||isNaN(cur))return"";const d=cur-prev;if(Math.abs(d)<1e-9)return`<span class="dz">= önceki dönemle aynı</span>`;
   const good=dir==="low"?d<0:dir==="high"?d>0:null;return `<span class="${good==null?"dz":good?"dg":"db"}">${d>0?"▲":"▼"} ${fmt(Math.abs(d))}${unit?" "+unit:""}</span> <span class="dz">önceki ${fmt(prev)}</span>`};
-const RXEX={out:"#2a78d6",in:"#eb6834",str:"#1baf7a"};
+const RXEX={out:"#2a78d6",in:"#eb6834",sport:"#8e5bd0",str:"#1baf7a"};
 function rxExWeekly(X){const wk=X.weeks;if(!wk.length)return"";const W=720,H=130,Lp=36,Rr=8,T=16,B=18,iw=W-Lp-Rr,ih=H-T-B,bw=iw/wk.length;
-  const tot=w=>(w.out||0)+(w.in||0)+(w.str||0),sc=w=>w.n<7?7/w.n:1;
+  const tot=w=>(w.out||0)+(w.in||0)+(w.sport||0)+(w.str||0),sc=w=>w.n<7?7/w.n:1;
   const mx=Math.max(180,...wk.map(w=>tot(w)))*1.1,y=v=>T+ih*(1-v/mx);let g="";
   niceTicks(0,mx,4).ticks.forEach(v=>g+=`<line x1="${Lp}" x2="${W-Rr}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}" stroke="${RX.line}" stroke-width=".6"/>`+txt(Lp-4,y(v)+3,numTR(v,0),{a:"end",fs:8.5}));
   const step=Math.max(1,Math.ceil(wk.length/10));
-  wk.forEach((w,i)=>{const x=Lp+i*bw+bw*.15,bwid=Math.max(1,bw*.7);let base=0;["out","in","str"].forEach((c,ci,arr)=>{const v=w[c]||0;if(!v)return;const y0=y(base),y1=y(base+v);base+=v;const last=!arr.slice(ci+1).some(z=>w[z]);
+  wk.forEach((w,i)=>{const x=Lp+i*bw+bw*.15,bwid=Math.max(1,bw*.7);let base=0;["out","in","sport","str"].forEach((c,ci,arr)=>{const v=w[c]||0;if(!v)return;const y0=y(base),y1=y(base+v);base+=v;const last=!arr.slice(ci+1).some(z=>w[z]);
       g+=`<rect x="${x.toFixed(1)}" y="${(y1+(last?0:1)).toFixed(1)}" width="${bwid.toFixed(1)}" height="${Math.max(.5,y0-y1-(last?0:1)).toFixed(1)}" rx="${last?Math.min(3,bwid/2).toFixed(1):0}" fill="${RXEX[c]}"/>`});
     if(tot(w))g+=txt(x+bwid/2,y(tot(w))-3,numTR(tot(w),0),{a:"middle",fs:7.5,fill:RX.ink});
     if(i%step===0)g+=txt(x+bwid/2,H-4,rxSd(w.k),{a:"middle",fs:8})});
