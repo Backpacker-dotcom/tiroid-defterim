@@ -1795,97 +1795,293 @@ function doseSection(a,b){const R=doseRanges().filter(r=>r.date<=b);if(!R.length
   return `<section><h2>İlaç kullanım dönemleri</h2><div class="${ch?"two":""}" style="${ch?"grid-template-columns:1.35fr 1fr":""}"><table class="trend lt"><thead><tr><th>İlaç / doz</th><th>Tarih aralığı</th><th>Süre</th><th>Önceki doza göre</th></tr></thead><tbody>${rows}</tbody></table>
    ${ch?`<div><b style="font-size:9pt">Doz seyri</b>${ch}<p class="cap">Vurgulu alan rapor dönemi; ▲ artış, ▼ azalış.</p></div>`:""}</div>
    <p class="cap">Vurgulu satırlar rapor dönemine denk gelen kullanım dönemleridir.</p></section>`}
+/* ---------- Doktor raporu v3: yeniden tasarım ---------- */
+const RX={good:"#247545",warn:"#B45309",bad:"#B91C1C",ink:"#14211D",muted:"#5B6B65",line:"#D9E2DE",sunk:"#EEF3F1",acc:"#23584E",accSoft:"#E3F0EC",
+  p:"#2a78d6",f:"#eb6834",c:"#1baf7a",water:"#2a78d6",sym:["#EEF3F1","#DCD6F7","#B0A4EE","#7C6BDB","#4E3BB8"]};
+const IC={
+  pill:'<path d="M10.5 3.5a5 5 0 0 1 7 7l-7 7a5 5 0 0 1-7-7z"/><path d="m7 7 7 7"/>',
+  flask:'<path d="M9 3h6M10 3v6L4.5 18.5A2 2 0 0 0 6.2 21h11.6a2 2 0 0 0 1.7-2.5L14 9V3"/><path d="M7.5 15h9"/>',
+  scale:'<rect x="3" y="4" width="18" height="16" rx="4"/><path d="M8.5 9.5a5 5 0 0 1 7 0M12 9.5l1.5-2"/>',
+  plate:'<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/>',
+  drop:'<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/>',
+  face:'<circle cx="12" cy="12" r="9"/><path d="M8.5 15s1.3-1.5 3.5-1.5 3.5 1.5 3.5 1.5M9 9.5h.01M15 9.5h.01"/>',
+  cal:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  chart:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+  cap:'<rect x="3" y="8" width="18" height="8" rx="4"/><path d="M12 8v8"/>',
+  alert:'<path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17h.01"/>',
+  info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>',
+  ok:'<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>',
+  wine:'<path d="M8 3h8l-1 7a3 3 0 0 1-6 0zM12 13v7M8 21h8"/>'};
+const ico=(n,c,s)=>`<svg class="ic" width="${s||16}" height="${s||16}" viewBox="0 0 24 24" fill="none" stroke="${c||"currentColor"}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[n]}</svg>`;
+const LOGO=`<svg width="40" height="40" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="16" fill="${RX.acc}"/><g transform="translate(16 16.4) scale(.78) translate(-16 -16)"><g fill="#D9EFE8"><path d="M16.6 15.2C18 9.6 22.4 4.6 27.2 4.9 30.6 5.1 31.2 9.4 28.6 12.6 26.3 15.4 21.2 16.3 16.6 15.2Z"/><path d="M16.6 16.6C20.6 16.5 24.6 18 25.6 21.4 26.4 24.3 24.1 27.3 21.4 26.1 18.6 24.9 17 20.6 16.6 16.6Z" fill="#8FD0BE"/><g transform="matrix(-1 0 0 1 32 0)"><path d="M16.6 15.2C18 9.6 22.4 4.6 27.2 4.9 30.6 5.1 31.2 9.4 28.6 12.6 26.3 15.4 21.2 16.3 16.6 15.2Z"/><path d="M16.6 16.6C20.6 16.5 24.6 18 25.6 21.4 26.4 24.3 24.1 27.3 21.4 26.1 18.6 24.9 17 20.6 16.6 16.6Z" fill="#8FD0BE"/></g></g><rect x="15.15" y="10.2" width="1.7" height="15.4" rx=".85" fill="#0F2E28"/></g></svg>`;
+const rxSd=k=>parseKey(k).toLocaleDateString("tr-TR",{day:"numeric",month:"short"});
+const rxLd=k=>parseKey(k).toLocaleDateString("tr-TR",{day:"numeric",month:"long",year:"numeric"});
+const rxT=k=>parseKey(k).getTime();
+const svgBox=(W,H,inner,label)=>`<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="${label}" style="display:block">${inner}</svg>`;
+const txt=(x,y,s,o)=>`<text x="${(+x).toFixed(1)}" y="${(+y).toFixed(1)}" font-size="${(o&&o.fs)||9}" fill="${(o&&o.fill)||RX.muted}" text-anchor="${(o&&o.a)||"start"}"${o&&o.fw?` font-weight="${o.fw}"`:""}>${s}</text>`;
+function niceTicks(lo,hi,n){const span=hi-lo||1,raw=span/(n||4),p=Math.pow(10,Math.floor(Math.log10(raw))),m=raw/p,st=(m<1.5?1:m<3?2:m<7?5:10)*p;const out=[];for(let v=Math.ceil(lo/st)*st;v<=hi+1e-9;v+=st)out.push(+v.toFixed(6));return{ticks:out,step:st}}
+function xDateLabels(t0,t1,x,y,W){const days=(t1-t0)/864e5,out=[];const n=Math.max(2,Math.min(7,Math.floor(W/90)));
+  for(let i=0;i<n;i++){const t=t0+(t1-t0)*i/(n-1),d=new Date(t);out.push(txt(x(t),y,d.toLocaleDateString("tr-TR",days>200?{month:"short",year:"2-digit"}:{day:"numeric",month:"short"}),{a:i===0?"start":i===n-1?"end":"middle"}))}return out.join("")}
+/* Günlük takip haritası */
+function rxStrip(I,a,b,nm){
+  const byWeek=I.length>62;let cols;
+  if(!byWeek)cols=I.map(i=>({k:i.k,items:[i]}));
+  else{cols=[];I.forEach(i=>{const d=parseKey(i.k);d.setDate(d.getDate()-((d.getDay()+6)%7));const wk=keyOf(d);let c=cols[cols.length-1];if(!c||c.k!==wk)cols.push(c={k:wk,items:[]});c.items.push(i)})}
+  const labs=labsL(),doses=doseRanges();
+  const rows=[];
+  if(!nm)rows.push(["İlaç",c=>{const it=c.items.filter(i=>i.med!=="future"&&i.med!=="none");if(!it.length)return null;const tk=it.filter(i=>i.med==="taken").length/it.length;return tk>=.999?RX.good:tk>=.7?"#86C49A":RX.bad}]);
+  rows.push(["Kalori",c=>{const it=c.items.filter(i=>i.has);if(!it.length)return null;const k=it.reduce((x,i)=>x+i.t.k,0)/it.length,t=it.reduce((x,i)=>x+i.tar,0)/it.length;return k>t*1.05?RX.bad:k<t*.8?RX.warn:RX.good}]);
+  rows.push(["“Uzak dur”",c=>{const n=c.items.reduce((x,i)=>x+i.entries.filter(e=>stOf(e)==="no").length,0)/(byWeek?c.items.length:1);return n<=0?(c.items.some(i=>i.has)?"#F4F7F6":null):n<1.2?"#F2B8B5":n<2.5?"#E06C67":RX.bad}]);
+  rows.push(["Belirti",c=>{const v=c.items.map(i=>{const sy=(S.days[i.k]||{}).sym;if(!sy)return null;const a=SYMS.map(([id])=>sy[id]).filter(x=>x!=null);return a.length?a.reduce((x,y)=>x+y,0)/a.length:null}).filter(x=>x!=null);if(!v.length)return null;const m=v.reduce((x,y)=>x+y,0)/v.length;return RX.sym[Math.min(4,Math.round(m))]}]);
+  rows.push(["Su",c=>{const v=c.items.map(i=>(S.days[i.k]||{}).water).filter(x=>x>0);if(!v.length)return null;const m=v.reduce((x,y)=>x+y,0)/v.length;return m<1000?"#CFE2F8":m<1500?"#94BFF0":m<2000?"#5A99E3":"#2a63b8"}]);
+  const W=720,Lw=78,cw=(W-Lw)/cols.length,rh=13,gap=3,top=4,H=top+rows.length*(rh+gap)+40;
+  let g="";
+  rows.forEach(([n,f],ri)=>{const y=top+ri*(rh+gap);g+=txt(0,y+rh-4,n,{fs:9,fill:RX.ink,fw:600});
+    cols.forEach((c,ci)=>{const col=f(c),x=Lw+ci*cw;g+=col?`<rect x="${(x+.6).toFixed(1)}" y="${y}" width="${Math.max(1,cw-1.2).toFixed(1)}" height="${rh}" rx="2" fill="${col}"/>`:`<rect x="${(x+.6).toFixed(1)}" y="${y}" width="${Math.max(1,cw-1.2).toFixed(1)}" height="${rh}" rx="2" fill="none" stroke="${RX.line}" stroke-width=".6"/>`})});
+  // olaylar
+  const ey=top+rows.length*(rh+gap)+4;g+=txt(0,ey+9,"Olaylar",{fs:9,fill:RX.ink,fw:600});
+  cols.forEach((c,ci)=>{const x=Lw+ci*cw+cw/2,ks=c.items.map(i=>i.k);const hasLab=labs.some(l=>ks.includes(l.date)),hasDose=doses.some(d=>ks.includes(d.date)),hasW=c.items.some(i=>i.w);
+    let yy=ey;if(hasLab){g+=`<rect x="${(x-5).toFixed(1)}" y="${yy}" width="10" height="11" rx="2" fill="${RX.acc}"/>`+txt(x,yy+8.5,"T",{fs:7.5,fill:"#fff",a:"middle",fw:700});yy+=12}
+    if(hasDose){g+=`<rect x="${(x-5).toFixed(1)}" y="${yy}" width="10" height="11" rx="2" fill="${RX.p}"/>`+txt(x,yy+8.5,"D",{fs:7.5,fill:"#fff",a:"middle",fw:700});yy+=12}});
+  // tarih etiketleri
+  const step=Math.max(1,Math.ceil(cols.length/10));let lbl="";cols.forEach((c,ci)=>{if(ci%step===0)lbl+=txt(Lw+ci*cw+1,H-2,rxSd(c.k),{fs:8})});
+  return svgBox(W,H,g+lbl,"Günlük takip haritası")+`<div class="lg">${nm?"":`<span><i style="background:${RX.good}"></i>İlaç alındı</span>${byWeek?`<span><i style="background:#86C49A"></i>haftanın %70'inden fazlası</span>`:""}<span><i style="background:${RX.bad}"></i>İlaç işaretlenmedi${byWeek?" (daha az)":""}</span>`}
+   <span><i style="background:${RX.good}"></i>Kalori hedefte</span><span><i style="background:${RX.bad}"></i>aşım</span><span><i style="background:${RX.warn}"></i>çok düşük</span>
+   <span><i style="background:#E06C67"></i>“Uzak dur” tüketimi (koyu = çok)</span><span><i style="background:${RX.sym[3]}"></i>Belirti şiddeti (koyu = şiddetli)</span><span><i style="background:#5A99E3"></i>Su (koyu = çok)</span>
+   <span><i style="background:${RX.acc}"></i>T tahlil</span><span><i style="background:${RX.p}"></i>D doz değişikliği</span><span><i style="background:#fff;border:1px solid ${RX.line}"></i>kayıt yok</span>${byWeek?"<span>Her sütun bir hafta</span>":"<span>Her sütun bir gün</span>"}</div>`}
+/* Zaman ekseni ortak grafikler (tahlil + doz) */
+function rxLabChart(L,dom,band,W,H,title){if(!L.length)return"";
+  const Lp=36,Rr=8,T=16,B=18,iw=W-Lp-Rr,ih=H-T-B,[t0,t1]=dom,x=t=>Lp+(t-t0)/(t1-t0||1)*iw;
+  const last=L[L.length-1],lo=last.lo,hi=last.hi;const vals=L.map(l=>l.v).concat([lo,hi].filter(v=>v!=null));let mn=Math.min(...vals),mx=Math.max(...vals);const pd=(mx-mn)*.18||1;mn=Math.max(0,mn-pd);mx+=pd;
+  const y=v=>T+ih*(1-(v-mn)/(mx-mn));const nt=niceTicks(mn,mx,3);
+  let g=`<rect x="${Lp}" y="${y(hi!=null?Math.min(hi,mx):mx).toFixed(1)}" width="${iw}" height="${(y(lo!=null?Math.max(lo,mn):mn)-y(hi!=null?Math.min(hi,mx):mx)).toFixed(1)}" fill="${RX.good}" opacity=".09"/>`;
+  if(band){const xa=Math.max(Lp,x(band[0])),xb=Math.min(W-Rr,x(band[1]));if(xb>xa)g+=`<rect x="${xa.toFixed(1)}" y="${T-12}" width="${(xb-xa).toFixed(1)}" height="${ih+12}" fill="${RX.acc}" opacity=".07"/>`}
+  nt.ticks.forEach(v=>g+=`<line x1="${Lp}" x2="${W-Rr}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}" stroke="${RX.line}" stroke-width=".6"/>`+txt(Lp-4,y(v)+3,numTR(v,v<10?1:0),{a:"end",fs:8.5}));
+  const pts=L.map(l=>[x(rxT(l.date)),y(l.v),l]);
+  g+=`<path d="${pts.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1)).join("")}" fill="none" stroke="${RX.ink}" stroke-width="1.6"/>`;
+  pts.forEach(p=>{const ok=labStatus(p[2])[0]==="ok";g+=`<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3.6" fill="${ok?RX.acc:RX.bad}" stroke="#fff" stroke-width="1.2"/>`+txt(p[0],p[1]-6,numTR(p[2].v),{a:"middle",fs:8.5,fill:RX.ink,fw:700})});
+  g+=txt(Lp,10,title,{fs:9.5,fill:RX.ink,fw:700})+txt(W-Rr,10,`referans ${lo!=null?numTR(lo):""}–${hi!=null?numTR(hi):""} ${esc(last.u||"")}`,{a:"end",fs:8.5});
+  g+=xDateLabels(t0,t1,x,H-4,iw);
+  return svgBox(W,H,g,title)}
+function rxDoseChart(R,dom,band,W,H){if(!R.length)return"";const Lp=36,Rr=8,T=16,B=18,iw=W-Lp-Rr,ih=H-T-B,[t0,t1]=dom,x=t=>Lp+Math.max(0,Math.min(1,(t-t0)/(t1-t0||1)))*iw;
+  const mx=Math.max(...R.map(doseMcg))*1.3,y=v=>T+ih*(1-v/mx);let g="";
+  if(band){const xa=Math.max(Lp,x(band[0])),xb=Math.min(W-Rr,x(band[1]));if(xb>xa)g+=`<rect x="${xa.toFixed(1)}" y="${T-12}" width="${(xb-xa).toFixed(1)}" height="${ih+12}" fill="${RX.acc}" opacity=".07"/>`}
+  g+=`<line x1="${Lp}" x2="${W-Rr}" y1="${T+ih}" y2="${T+ih}" stroke="${RX.line}"/>`;
+  R.forEach((r,i)=>{const xs=x(rxT(r.date)),xe=x(r.to?rxT(r.to)+864e5:t1),yy=y(doseMcg(r));if(xe<=Lp||xs>=W-Rr)return;
+    g+=`<path d="M${xs.toFixed(1)} ${yy.toFixed(1)}H${xe.toFixed(1)}" stroke="${RX.p}" stroke-width="3" stroke-linecap="round"/>`;
+    const nx=R[i+1];if(nx&&r.to&&shiftKey(r.to,1)===nx.date)g+=`<path d="M${xe.toFixed(1)} ${yy.toFixed(1)}V${y(doseMcg(nx)).toFixed(1)}" stroke="${RX.p}" stroke-dasharray="2 2" stroke-width="1"/>`;
+    g+=txt(Math.max(Lp,xs)+2,yy-5,esc(fmtDose(r)),{fs:8.5,fill:RX.ink,fw:700})});
+  g+=txt(Lp,10,"İlaç dozu (aynı zaman ekseni)",{fs:9.5,fill:RX.ink,fw:700})+xDateLabels(t0,t1,x,H-4,iw);
+  return svgBox(W,H,g,"İlaç dozu seyri")}
+function rxSpark(L){if(L.length<2)return"";const W=90,H=24,vs=L.map(l=>l.v),mn=Math.min(...vs),mx=Math.max(...vs),x=i=>2+i*(W-4)/(L.length-1),y=v=>H-3-(v-mn)/((mx-mn)||1)*(H-6);
+  return `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" aria-hidden="true"><path d="${L.map((l,i)=>(i?"L":"M")+x(i).toFixed(1)+" "+y(l.v).toFixed(1)).join("")}" fill="none" stroke="${RX.ink}" stroke-width="1.3"/>${L.map((l,i)=>`<circle cx="${x(i).toFixed(1)}" cy="${y(l.v).toFixed(1)}" r="${i===L.length-1?2.8:1.8}" fill="${labStatus(l)[0]==="ok"?RX.acc:RX.bad}"/>`).join("")}</svg>`}
+/* İlaç uyumu (haftalık) ve alma saati */
+function rxAdherence(I){const wk=[];I.forEach(i=>{const d=parseKey(i.k);d.setDate(d.getDate()-((d.getDay()+6)%7));const k=keyOf(d);let w=wk[wk.length-1];if(!w||w.k!==k)wk.push(w={k,t:0,m:0,n:0});if(i.med==="taken")w.t++;else if(i.med==="missed")w.m++;else w.n++});
+  const W=340,H=112,Lp=22,Rr=4,T=14,B=18,iw=W-Lp-Rr,ih=H-T-B,bw=iw/wk.length,y=v=>T+ih*(1-v/7);let g="";
+  [0,7].forEach(v=>g+=`<line x1="${Lp}" x2="${W-Rr}" y1="${y(v)}" y2="${y(v)}" stroke="${RX.line}" stroke-width=".6"/>`+txt(Lp-4,y(v)+3,v,{a:"end",fs:8}));
+  wk.forEach((w,i)=>{const x=Lp+i*bw+bw*.18,bwi=bw*.64;let acc=0;[[w.t,RX.good],[w.m,RX.bad]].forEach(([v,c])=>{if(!v)return;g+=`<rect x="${x.toFixed(1)}" y="${y(acc+v).toFixed(1)}" width="${bwi.toFixed(1)}" height="${(y(acc)-y(acc+v)-1).toFixed(1)}" rx="1.5" fill="${c}"/>`;acc+=v});
+    if(i%Math.max(1,Math.ceil(wk.length/5))===0)g+=txt(x+bwi/2,H-4,rxSd(w.k),{a:"middle",fs:7.5})});
+  return svgBox(W,H,txt(Lp,9,"Haftalık ilaç uyumu (gün)",{fs:9.5,fill:RX.ink,fw:700})+g,"Haftalık ilaç uyumu")}
+function rxMedTimes(I,plan){const pts=I.filter(i=>i.medAt).map(i=>[rxT(i.k),toMin(i.medAt)]);if(pts.length<2)return"";
+  const W=340,H=112,Lp=36,Rr=6,T=14,B=18,iw=W-Lp-Rr,ih=H-T-B,t0=rxT(I[0].k),t1=rxT(I[I.length-1].k)||t0+1,x=t=>Lp+(t-t0)/((t1-t0)||1)*iw;
+  const ms=pts.map(p=>p[1]).concat(plan!=null?[plan-60,plan+60]:[]);const mn=Math.floor((Math.min(...ms)-15)/30)*30,mx=Math.ceil((Math.max(...ms)+15)/30)*30,y=m=>T+ih*(1-(m-mn)/(mx-mn||1));
+  let g="";const stp=(mx-mn)>180?60:30,tks=[];for(let v=mn;v<=mx;v+=stp)tks.push(v);tks.forEach(v=>g+=`<line x1="${Lp}" x2="${W-Rr}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}" stroke="${RX.line}" stroke-width=".6"/>`+txt(Lp-4,y(v)+3,toHM(v),{a:"end",fs:8}));
+  if(plan!=null){g+=`<rect x="${Lp}" y="${y(plan+60).toFixed(1)}" width="${iw}" height="${(y(plan-60)-y(plan+60)).toFixed(1)}" fill="${RX.good}" opacity=".08"/><line x1="${Lp}" x2="${W-Rr}" y1="${y(plan).toFixed(1)}" y2="${y(plan).toFixed(1)}" stroke="${RX.good}" stroke-dasharray="4 3"/>`+`<rect x="${Lp+2}" y="${(y(plan)-11).toFixed(1)}" width="56" height="10" rx="2" fill="#fff" opacity=".85"/>`+txt(Lp+4,y(plan)-3,"plan "+toHM(plan),{fs:8,fill:RX.good,fw:700})}
+  pts.forEach(p=>g+=`<circle cx="${x(p[0]).toFixed(1)}" cy="${y(p[1]).toFixed(1)}" r="2.6" fill="${plan!=null&&Math.abs(p[1]-plan)>60?RX.warn:RX.acc}"/>`);
+  I.filter(i=>i.med==="missed").forEach(i=>g+=txt(x(rxT(i.k)),T+ih-2,"×",{a:"middle",fs:9,fill:RX.bad,fw:700}));
+  return svgBox(W,H,txt(Lp,9,"İlacı alma saati",{fs:9.5,fill:RX.ink,fw:700})+g+xDateLabels(t0,t1,x,H-4,iw),"İlacı alma saatleri")}
+/* Kilo */
+function rxWeight(I,goal){const pts=I.filter(i=>i.w).map(i=>[rxT(i.k),i.w]);if(!pts.length)return"";
+  const W=720,H=150,Lp=36,Rr=40,T=16,B=18,iw=W-Lp-Rr,ih=H-T-B,t0=rxT(I[0].k),t1=rxT(I[I.length-1].k),x=t=>Lp+(t-t0)/((t1-t0)||1)*iw;
+  const vs=pts.map(p=>p[1]).concat(goal?[goal]:[]);let mn=Math.min(...vs),mx=Math.max(...vs);const pd=Math.max(.5,(mx-mn)*.15);mn-=pd;mx+=pd;const y=v=>T+ih*(1-(v-mn)/(mx-mn));
+  let g="";niceTicks(mn,mx,4).ticks.forEach(v=>g+=`<line x1="${Lp}" x2="${W-Rr}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}" stroke="${RX.line}" stroke-width=".6"/>`+txt(Lp-4,y(v)+3,numTR(v,1),{a:"end",fs:8.5}));
+  if(goal)g+=`<line x1="${Lp}" x2="${W-Rr}" y1="${y(goal).toFixed(1)}" y2="${y(goal).toFixed(1)}" stroke="${RX.good}" stroke-dasharray="5 4"/>`+txt(W-Rr+3,y(goal)+3,"hedef "+fmtKg(goal),{fs:8,fill:RX.good});
+  pts.forEach(p=>g+=`<circle cx="${x(p[0]).toFixed(1)}" cy="${y(p[1]).toFixed(1)}" r="2.2" fill="#9DB3AC"/>`);
+  // 7 günlük hareketli ortalama
+  const ma=pts.map((p,i)=>{const w=pts.filter(q=>q[0]<=p[0]&&q[0]>p[0]-7*864e5);return[p[0],w.reduce((a,q)=>a+q[1],0)/w.length]});
+  if(ma.length>1)g+=`<path d="${ma.map((p,i)=>(i?"L":"M")+x(p[0]).toFixed(1)+" "+y(p[1]).toFixed(1)).join("")}" fill="none" stroke="${RX.acc}" stroke-width="2.2" stroke-linejoin="round"/>`;
+  const l=ma[ma.length-1];g+=`<circle cx="${x(l[0]).toFixed(1)}" cy="${y(l[1]).toFixed(1)}" r="3.5" fill="${RX.acc}"/>`+txt(x(l[0])+5,y(l[1])+3,fmtKg(pts[pts.length-1][1])+" kg",{fs:9,fill:RX.ink,fw:700});
+  return svgBox(W,H,txt(Lp,10,"Günlük kilo (noktalar) ve 7 günlük ortalama (çizgi)",{fs:9.5,fill:RX.ink,fw:700})+g+xDateLabels(t0,t1,x,H-4,iw),"Kilo grafiği")}
+/* Kalori */
+function rxKcal(I){const byWeek=I.length>62;let cols;
+  if(!byWeek)cols=I.map(i=>({k:i.k,v:i.has?i.t.k:null,t:i.has?i.tar:null}));
+  else{cols=[];I.forEach(i=>{const d=parseKey(i.k);d.setDate(d.getDate()-((d.getDay()+6)%7));const wk=keyOf(d);let c=cols[cols.length-1];if(!c||c.k!==wk)cols.push(c={k:wk,s:0,ts:0,n:0});if(i.has){c.s+=i.t.k;c.ts+=i.tar;c.n++}});cols.forEach(c=>{c.v=c.n?c.s/c.n:null;c.t=c.n?c.ts/c.n:null})}
+  const W=720,H=140,Lp=36,Rr=8,T=16,B=18,iw=W-Lp-Rr,ih=H-T-B,bw=iw/cols.length;const mx=Math.max(500,...cols.map(c=>Math.max(c.v||0,c.t||0)))*1.1,y=v=>T+ih*(1-v/mx);
+  let g="";niceTicks(0,mx,4).ticks.forEach(v=>g+=`<line x1="${Lp}" x2="${W-Rr}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}" stroke="${RX.line}" stroke-width=".6"/>`+txt(Lp-4,y(v)+3,numTR(v,0),{a:"end",fs:8.5}));
+  cols.forEach((c,i)=>{const x=Lp+i*bw+bw*.15,w=bw*.7;if(c.v){const col=c.v>c.t*1.05?RX.bad:c.v<c.t*.8?RX.warn:RX.good;g+=`<rect x="${x.toFixed(1)}" y="${y(c.v).toFixed(1)}" width="${Math.max(1,w).toFixed(1)}" height="${(T+ih-y(c.v)).toFixed(1)}" rx="${Math.min(3,w/2).toFixed(1)}" fill="${col}"/>`}
+    if(c.t)g+=`<path d="M${(Lp+i*bw).toFixed(1)} ${y(c.t).toFixed(1)}h${bw.toFixed(1)}" stroke="${RX.ink}" stroke-width="1.2" stroke-dasharray="3 2"/>`;
+    const step=Math.max(1,Math.ceil(cols.length/10));if(i%step===0)g+=txt(x+w/2,H-4,rxSd(c.k),{a:"middle",fs:8})});
+  return svgBox(W,H,txt(Lp,10,byWeek?"Haftalık ortalama kalori":"Günlük kalori",{fs:9.5,fill:RX.ink,fw:700})+txt(W-Rr,10,"kesikli çizgi: hedef",{a:"end",fs:8.5})+g,"Kalori grafiği")}
+/* %100 yatay yığılmış çubuk */
+function rxStack(rows,W){W=W||340;const Lw=78,rh=16,H=rows.length*(rh+10)+4;let g="";
+  rows.forEach((r,ri)=>{const y=ri*(rh+10)+2,tot=r.parts.reduce((a,p)=>a+p[0],0)||1;let x=Lw;g+=txt(0,y+rh-4,r.label,{fs:9,fill:RX.ink,fw:600});
+    r.parts.forEach(([v,c,l])=>{const w=(W-Lw)*v/tot;if(w<=0)return;g+=`<rect x="${(x+.5).toFixed(1)}" y="${y}" width="${Math.max(0,w-1).toFixed(1)}" height="${rh}" rx="2" fill="${c}"/>`;if(w>34)g+=txt(x+w/2,y+rh-4.5,l,{a:"middle",fs:8.5,fill:"#fff",fw:700});x+=w})});
+  return svgBox(W,H,g,"Dağılım")}
+/* Belirti ısı haritası */
+function rxSymHeat(keys){const rows=SYMS.filter(([id])=>keys.some(k=>{const s=(S.days[k]||{}).sym;return s&&s[id]!=null}));if(!rows.length)return"";
+  const byWeek=keys.length>45;let cols;
+  if(!byWeek)cols=keys.map(k=>({k,ks:[k]}));else{cols=[];keys.forEach(k=>{const d=parseKey(k);d.setDate(d.getDate()-((d.getDay()+6)%7));const wk=keyOf(d);let c=cols[cols.length-1];if(!c||c.k!==wk)cols.push(c={k:wk,ks:[]});c.ks.push(k)})}
+  const W=720,Lw=128,cw=(W-Lw)/cols.length,rh=14,gap=3,H=rows.length*(rh+gap)+16;let g="";
+  rows.forEach(([id,n],ri)=>{const y=ri*(rh+gap);g+=txt(0,y+rh-3.5,n,{fs:8.8,fill:RX.ink});
+    cols.forEach((c,ci)=>{const v=c.ks.map(k=>{const s=(S.days[k]||{}).sym;return s?s[id]:null}).filter(x=>x!=null);const x=Lw+ci*cw;
+      if(!v.length){g+=`<rect x="${(x+.5).toFixed(1)}" y="${y}" width="${Math.max(1,cw-1).toFixed(1)}" height="${rh}" rx="2" fill="none" stroke="${RX.line}" stroke-width=".6"/>`;return}
+      const m=v.reduce((a,b)=>a+b,0)/v.length;g+=`<rect x="${(x+.5).toFixed(1)}" y="${y}" width="${Math.max(1,cw-1).toFixed(1)}" height="${rh}" rx="2" fill="${RX.sym[Math.min(4,Math.round(m))]}"/>`})});
+  const step=Math.max(1,Math.ceil(cols.length/10));cols.forEach((c,ci)=>{if(ci%step===0)g+=txt(Lw+ci*cw+1,H-2,rxSd(c.k),{fs:8})});
+  return svgBox(W,H,g,"Belirti ısı haritası")+`<div class="lg">${LV.map((l,i)=>`<span><i style="background:${RX.sym[i]}"></i>${i} ${l.toLocaleLowerCase("tr-TR")}</span>`).join("")}<span><i style="background:#fff;border:1px solid ${RX.line}"></i>işaretlenmedi</span><span>${byWeek?"Her sütun bir haftanın ortalaması":"Her sütun bir gün"}</span></div>`}
+/* KPI kartı */
+const kpi=(icon,label,val,sub,tone)=>`<div class="kpi ${tone||""}"><div class="kl">${ico(icon,null,14)}${label}</div><div class="kv">${val}</div><div class="ks">${sub||""}</div></div>`;
+const dlt=(cur,prev,dir,fmt,unit)=>{if(prev==null||cur==null||isNaN(prev)||isNaN(cur))return"";const d=cur-prev;if(Math.abs(d)<1e-9)return`<span class="dz">= önceki dönemle aynı</span>`;
+  const good=dir==="low"?d<0:dir==="high"?d>0:null;return `<span class="${good==null?"dz":good?"dg":"db"}">${d>0?"▲":"▼"} ${fmt(Math.abs(d))}${unit?" "+unit:""}</span> <span class="dz">önceki ${fmt(prev)}</span>`};
 function doctorHTML(a,b,notes,withDaily){
-  const st=S.settings,len=keysBetween(a,b).length,pa=shiftKey(a,-len),pb=shiftKey(a,-1),fk=firstKey();
-  const C=metrics(keysBetween(a,b)),P=metrics(keysBetween(pa,pb)),hasPrev=pb>=fk&&P.tracked>0,A=C.A;
-  const E=evaluate2(C,P,hasPrev),Hs=histSeries(fk<a?fk:a,b),showHist=Hs.length>=3;
-  const sd=k=>parseKey(k).toLocaleDateString("tr-TR",{day:"numeric",month:"short"});
-  const ld=k=>parseKey(k).toLocaleDateString("tr-TR",{day:"numeric",month:"long",year:"numeric"});
-  const i0=v=>nf(v,0),i1=v=>nf(v,1),kg=v=>fmtKg(v),hm=v=>mmToHM(v);
-  const P_=hasPrev?P:{A:{}};
-  const nm=noMed();
-  const rows=[...(nm?[]:[
-    `<tr class="grp"><th colspan="4">İlaç (${esc(medLabel())}${st.medTime?`, plan ${st.medTime}`:""})</th></tr>`,
-    (()=>{const pv=hasPrev?P.doseEnd:null,cv=C.doseEnd;if(!pv&&!cv)return"";const ch=doseChange(pv,cv);
-      return `<tr><th>İlaç ve doz (dönem sonu)</th><td style="white-space:normal">${pv?esc(fmtDoseFull(pv)):"–"}</td><td style="white-space:normal"><b>${cv?esc(fmtDoseFull(cv)):"–"}</b></td><td style="white-space:normal;color:var(--prot);font-weight:700">${ch?(ch.kind==="same"?"=":esc(ch.t)):""}</td></tr>`})(),
-    cmpRow("Alınan gün",hasPrev?P.taken:null,C.taken,"high",i0,"gün"),
-    cmpRow("Atlanan gün",hasPrev?P.missed:null,C.missed,"low",i0,"gün"),
-    hasPrev&&P.tAvg!=null||C.tAvg!=null?cmpText("Ortalama alma saati",hasPrev&&P.tAvg!=null?hm(P.tAvg):"–",C.tAvg!=null?hm(C.tAvg):"–"):"",
-    cmpRow("Saat sapması (±dk)",hasPrev?P.tSd:null,C.tSd,"low",i0,"dk"),
-    cmpRow("İlaç sonrası erken yiyecek",hasPrev?P.inter:null,C.inter,"low",i0,"gün")]),
-    `<tr class="grp"><th colspan="4">Kilo</th></tr>`,
-    cmpRow("Dönem sonu kilo",hasPrev&&P.wN?P.wEnd:null,C.wN?C.wEnd:null,st.goalW&&C.wEnd>st.goalW?"low":"none",kg,"kg"),
-    cmpRow("Dönem içi değişim",hasPrev&&P.wN?P.wDelta:null,C.wN?C.wDelta:null,"none",v=>fmtDiff(v),"kg"),
-    cmpRow("Ortalama kilo",hasPrev&&P.wN?P.wAvg:null,C.wN?C.wAvg:null,"none",kg,"kg"),
-    ...(A.waN||(hasPrev&&P.A.waN)?[`<tr class="grp"><th colspan="4">Su</th></tr>`,
-      cmpRow("Ort. günlük su",hasPrev&&P.A.waN?P.A.waAvg:null,A.waN?A.waAvg:null,"none",i0,"ml"),
-      cmpRow("Su kaydı olan gün",hasPrev?P.A.waN:null,A.waN,"none",i0,"gün")]:[]),
-    `<tr class="grp"><th colspan="4">Kalori ve besin</th></tr>`,
-    cmpRow("Ort. günlük kalori",hasPrev&&P.A.n?P.A.avg:null,A.n?A.avg:null,"none",i0,"kcal"),
-    cmpRow("Hedefte geçen gün",hasPrev?P.A.ok:null,A.ok,"high",i0,"gün"),
-    cmpRow("Hedefi aşan gün",hasPrev?P.A.over:null,A.over,"low",i0,"gün"),
-    cmpRow("Çok düşük kalan gün",hasPrev?P.A.under:null,A.under,"low",i0,"gün"),
-    cmpRow("Protein",hasPrev&&P.A.n?P.p:null,A.n?C.p:null,"none",i0,"g/gün"),
-    cmpRow("Yağ",hasPrev&&P.A.n?P.f:null,A.n?C.f:null,"none",i0,"g/gün"),
-    cmpRow("Karbonhidrat",hasPrev&&P.A.n?P.c:null,A.n?C.c:null,"none",i0,"g/gün"),
-    `<tr class="grp"><th colspan="4">Beslenme kalitesi</th></tr>`,
-    cmpRow("“Uzak dur” tüketimi",hasPrev?P.A.harmCount:null,A.harmCount,"low",i0,"kez"),
-    cmpRow("Alkol alınan gün",hasPrev?P.fl.alcohol.size:null,C.fl.alcohol.size,"low",i0,"gün"),
-    cmpRow("Glüten içeren gün",hasPrev?P.fl.gluten.size:null,C.fl.gluten.size,"low",i0,"gün"),
-    cmpRow("Yüksek iyotlu gün",hasPrev?P.fl.iodine.size:null,C.fl.iodine.size,"low",i0,"gün"),
-    cmpRow("Kayıtlı gün",hasPrev?P.A.n:null,A.n,"none",i0,"gün"),
-    ...(C.sym._days||(hasPrev&&P.sym._days)?[`<tr class="grp"><th colspan="4">Belirtiler (0 yok – 4 şiddetli, ortalama)</th></tr>`,
-      ...SYMS.filter(([id])=>C.sym[id].avg!=null||(hasPrev&&P.sym[id].avg!=null)).map(([id,n])=>cmpRow(n,hasPrev?P.sym[id].avg:null,C.sym[id].avg,"low",v=>nf(v,1),"")),
-      cmpRow("İşaretlenen gün",hasPrev?P.sym._days:null,C.sym._days,"none",i0,"gün")]:[]),
+  const st=S.settings,keys=keysBetween(a,b),len=keys.length,pa=shiftKey(a,-len),pb=shiftKey(a,-1),fk=firstKey();
+  const C=metrics(keys),P=metrics(keysBetween(pa,pb)),hasPrev=pb>=fk&&P.tracked>0,A=C.A,I=A.I.filter(i=>i.med!=="future"),nm=noMed();
+  const Pv=hasPrev?P:null;const E=evaluate2(C,P,hasPrev).sort((x,y)=>({warn:0,info:1,good:2}[x.l]-{warn:0,info:1,good:2}[y.l]));
+  const i0=v=>nf(v,0),kg=v=>fmtKg(v);
+  const bmi=st.heightCm&&C.wN?C.wEnd/((st.heightCm/100)**2):null;
+  const labsAll=labsL().filter(l=>l.date<=b).sort((x,y)=>x.date<y.date?-1:1);
+  const tshL=labsAll.filter(l=>l.code==="TSH"),tshLast=tshL[tshL.length-1],tshPrev=tshL.length>1?tshL[tshL.length-2]:null;
+  const R=doseRanges().filter(r=>r.date<=b);
+  const recPct=C.tracked?Math.round(A.n/C.tracked*100):0;
+  // 1. sayfa: KPI'lar
+  const cards=[
+    nm?kpi("cal","Kayıt doluluğu",`${A.n} / ${C.tracked} gün`,`yiyecek kaydı olan gün · %${recPct}`):
+      kpi("pill","İlaç",`${C.taken} gün alındı`,`<b class="${C.missed?"db":"dg"}">${C.missed} gün işaretlenmedi</b>${hasPrev?` <span class="dz">· önceki ${P.missed}</span>`:""}`,C.missed>2?"t-bad":C.missed?"t-warn":"t-good"),
+    tshLast?kpi("flask","Son TSH",`${numTR(tshLast.v)} <small>${esc(tshLast.u||"")}</small>`,`<b class="${labStatus(tshLast)[0]==="ok"?"dg":"db"}">${labStatus(tshLast)[1]}</b> · ${rxSd(tshLast.date)}${tshPrev?` <span class="dz">· önceki ${numTR(tshPrev.v)}</span>`:""}`,labStatus(tshLast)[0]==="ok"?"t-good":"t-bad"):kpi("flask","Son TSH","–","bu döneme kadar tahlil girilmedi"),
+    C.wN?kpi("scale","Kilo",`${kg(C.wEnd)} <small>kg</small>`,`dönemde ${fmtDiff(C.wDelta)} kg${C.rate!=null&&C.wN>=3?` · haftada ${fmtDiff(C.rate)}`:""}`):kpi("scale","Kilo","–","ölçüm yok"),
+    A.n?kpi("plate","Ort. kalori",`${i0(A.avg)} <small>/ ${i0(A.avgTar)} kcal</small>`,`${A.ok} gün hedefte · ${A.over} aşım · ${A.under} düşük`,A.avg/A.avgTar>1.1||A.avg/A.avgTar<.7?"t-warn":"t-good"):kpi("plate","Ort. kalori","–","kayıt yok"),
+    C.sym._days?kpi("face","Belirti şiddeti",`${numTR(C.sym._avg,1)} <small>/ 4</small>`,dlt(C.sym._avg,Pv&&Pv.sym._avg,"low",v=>numTR(v,1))||`${C.sym._days} gün işaretlendi`):kpi("face","Belirti şiddeti","–","işaretlenmedi"),
+    kpi("alert","“Uzak dur” tüketimi",`${A.harmCount} <small>kez</small>`,dlt(A.harmCount,Pv&&Pv.A.harmCount,"low",i0)||(A.harm.slice(0,2).map(f=>esc(f.n)).join(", ")||"yok"),A.harmCount?"t-warn":"t-good"),
+    A.waN?kpi("drop","Su",`${fmtL(A.waAvg)} <small>L / gün</small>`,`${A.waN} gün kayıt${Pv&&Pv.A.waN?` <span class="dz">· önceki ${fmtL(Pv.A.waAvg)} L</span>`:""}`):kpi("drop","Su","–","kayıt yok"),
+    kpi("wine","Alkol",`${C.fl.alcohol.size} <small>gün</small>`,`${C.alcN} kez · ${i0(C.alcKcal)} kcal${hasPrev?` <span class="dz">· önceki ${P.fl.alcohol.size} gün</span>`:""}`,C.fl.alcohol.size?"t-warn":"t-good")].join("");
+  // Tahlil tablosu
+  const G=labGroups().map(([key,L])=>[key,L.filter(l=>l.date<=b)]).filter(([k,L])=>L.length);
+  const labRows=G.map(([key,L])=>{const last=L[L.length-1],[c,t]=labStatus(last),pv=L.length>1?L[L.length-2]:null,show=L.slice(-5);
+    return `<tr><td><b>${esc(labName(last))}</b><div class="cap">${last.lo!=null?numTR(last.lo):""}${last.lo!=null||last.hi!=null?" – ":""}${last.hi!=null?numTR(last.hi):""} ${esc(last.u||"")}</div></td>
+     <td class="vals">${show.map(l=>{const inP=l.date>=a&&l.date<=b,ok=labStatus(l)[0]==="ok";return `<span class="lv ${ok?"":"lb"} ${inP?"lp":""}"><b>${numTR(l.v)}</b><i>${parseKey(l.date).toLocaleDateString("tr-TR",{day:"numeric",month:"short",year:"2-digit"})}</i></span>`}).join("")}</td>
+     <td>${rxSpark(L.slice(-8))}</td><td><span class="chip ${c==="ok"?"cg":"cb"}">${t}</span>${pv?`<div class="cap">${last.v>pv.v?"▲":last.v<pv.v?"▼":"="} ${numTR(Math.abs(last.v-pv.v))} önceki sonuca göre</div>`:""}</td></tr>`}).join("");
+  // ortak zaman ekseni: tahlil ve doz
+  const tAll=[...labsAll.map(l=>rxT(l.date)),...R.map(r=>rxT(r.date))];const dom=[Math.min(rxT(a),...tAll),rxT(b)+864e5];if(dom[1]-dom[0]<30*864e5)dom[0]=dom[1]-30*864e5;
+  const band=[rxT(a),rxT(b)+864e5];
+  const ft4=labsAll.filter(l=>l.code==="FT4"),tpo=labsAll.filter(l=>l.code==="TPO");
+  const thyroCharts=[tshL.length?rxLabChart(tshL.slice(-14),dom,band,720,118,"TSH"):"",ft4.length?rxLabChart(ft4.slice(-14),dom,band,720,100,"Serbest T4 (sT4)"):"",(!nm&&R.length)?rxDoseChart(R,dom,band,720,74):""].filter(Boolean).join("");
+  const doseRows=R.slice(-8).map(r=>{const to=r.to&&r.to<b?r.to:b,inP=!r.to||r.to>=a;return `<tr class="${inP?"cur":""}"><td><b>${esc(doseMed(r))}</b> ${esc(fmtDose(r))}${r.note?`<div class="cap">${esc(r.note)}</div>`:""}</td><td>${rxSd(r.date)} ${parseKey(r.date).getFullYear()} – ${r.to?rxSd(r.to)+" "+parseKey(r.to).getFullYear():"devam ediyor"}</td><td>${dayN(r.date,to)} gün</td><td>${r.chg?(r.chg.kind==="same"?"aynı doz":esc(r.chg.t)):"ilk kayıt"}</td></tr>`}).join("");
+  const plan=st.medTime?toMin(st.medTime):null;
+  const suppRows=C.supp.map((x,i)=>`<tr><td><b>${esc(x.sp.name)}</b></td><td>${x.sp.time||"–"}</td><td>${+x.sp.lag>=240?"≥ 4 saat":"≥ "+(x.sp.lag||30)+" dk"}</td><td>${x.taken} / ${C.tracked} gün${hasPrev?` <span class="dz">(önceki ${P.supp[i].taken})</span>`:""}</td><td class="${x.close?"db":""}">${x.close||"–"}</td></tr>`).join("");
+  // beslenme
+  const T=targetFor(b),kt=C.p*4+C.f*9+C.c*4||1,tt=T.p*4+T.f*9+T.c*4||1;
+  const macroBars=A.n?rxStack([{label:"Gerçekleşen",parts:[[C.p*4,RX.p,`P %${Math.round(C.p*4/kt*100)}`],[C.f*9,RX.f,`Y %${Math.round(C.f*9/kt*100)}`],[C.c*4,RX.c,`K %${Math.round(C.c*4/kt*100)}`]]},
+    {label:"Hedef",parts:[[T.p*4,RX.p,`P %${Math.round(T.p*4/tt*100)}`],[T.f*9,RX.f,`Y %${Math.round(T.f*9/tt*100)}`],[T.c*4,RX.c,`K %${Math.round(T.c*4/tt*100)}`]]}]):"";
+  const qualBars=A.n?rxStack([{label:"Bu dönem",parts:[[A.q.ok,RX.good,`uygun %${A.pct("ok")}`],[A.q.care,RX.warn,`dikkatli %${A.pct("care")}`],[A.q.no,RX.bad,`uzak dur %${A.pct("no")}`]]},
+    ...(hasPrev&&P.A.n?[{label:"Önceki",parts:[[P.A.q.ok,RX.good,`%${P.A.pct("ok")}`],[P.A.q.care,RX.warn,`%${P.A.pct("care")}`],[P.A.q.no,RX.bad,`%${P.A.pct("no")}`]]}]:[])]):"";
+  const flag=(label,cur,prev,detail)=>`<tr><td>${label}</td><td><b>${cur}</b></td><td>${prev}</td><td>${detail||""}</td></tr>`;
+  const flags=[flag("“Uzak dur” tüketimi",A.harmCount+" kez",hasPrev?P.A.harmCount+" kez":"–",A.harm.slice(0,5).map(f=>`${esc(f.n)} (${f.c})`).join(", ")),
+    flag("Alkol",C.fl.alcohol.size+" gün",hasPrev?P.fl.alcohol.size+" gün":"–",C.alcN?`${C.alcN} kez · ${i0(C.alcKcal)} kcal`:""),
+    flag("Glüten içeren",C.fl.gluten.size+" gün",hasPrev?P.fl.gluten.size+" gün":"–",topN(C.flNames.gluten,4).map(esc).join(", ")),
+    flag("Soya ürünleri",C.fl.soy.size+" gün",hasPrev?P.fl.soy.size+" gün":"–",""),
+    flag("İyot içeriği yüksek",C.fl.iodine.size+" gün",hasPrev?P.fl.iodine.size+" gün":"–",topN(C.flNames.iodine,3).map(esc).join(", "))].join("");
+  // belirtiler
+  const symRows=SYMS.filter(([id])=>C.sym[id].avg!=null||(hasPrev&&P.sym[id].avg!=null)).map(([id,n])=>{const c=C.sym[id].avg,p=hasPrev?P.sym[id].avg:null;
+    return `<tr><td>${n}</td><td><div class="mbar"><i style="width:${c!=null?c/4*100:0}%;background:${c==null?"transparent":c>=2.5?RX.bad:c>=1.5?RX.warn:RX.good}"></i></div></td><td><b>${c!=null?numTR(c,1):"–"}</b></td><td>${p!=null?numTR(p,1):"–"}</td><td>${dlt(c,p,"low",v=>numTR(v,1)).replace(/<span class="dz">önceki.*?<\/span>/,"")}</td></tr>`}).join("");
+  // karşılaştırma tablosu (ayrıntılı)
+  const cmpRows=[...(nm?[]:[`<tr class="grp"><th colspan="4">İlaç</th></tr>`,
+    (()=>{const pv=hasPrev?P.doseEnd:null,cv=C.doseEnd;if(!pv&&!cv)return"";const ch=doseChange(pv,cv);return `<tr><th>İlaç ve doz (dönem sonu)</th><td style="white-space:normal">${pv?esc(fmtDoseFull(pv)):"–"}</td><td style="white-space:normal"><b>${cv?esc(fmtDoseFull(cv)):"–"}</b></td><td style="white-space:normal">${ch?(ch.kind==="same"?"=":esc(ch.t)):""}</td></tr>`})(),
+    cmpRow("Alınan gün",hasPrev?P.taken:null,C.taken,"high",i0,"gün"),cmpRow("İşaretlenmeyen gün",hasPrev?P.missed:null,C.missed,"low",i0,"gün"),
+    hasPrev&&P.tAvg!=null||C.tAvg!=null?cmpText("Ortalama alma saati",hasPrev&&P.tAvg!=null?mmToHM(P.tAvg):"–",C.tAvg!=null?mmToHM(C.tAvg):"–"):"",
+    cmpRow("Saat sapması",hasPrev?P.tSd:null,C.tSd,"low",i0,"dk"),cmpRow("İlaç sonrası erken yiyecek",hasPrev?P.inter:null,C.inter,"low",i0,"gün")]),
+    `<tr class="grp"><th colspan="4">Kilo</th></tr>`,cmpRow("Dönem sonu",hasPrev&&P.wN?P.wEnd:null,C.wN?C.wEnd:null,st.goalW&&C.wEnd>st.goalW?"low":"none",kg,"kg"),
+    cmpRow("Dönem içi değişim",hasPrev&&P.wN?P.wDelta:null,C.wN?C.wDelta:null,"none",v=>fmtDiff(v),"kg"),cmpRow("Ortalama",hasPrev&&P.wN?P.wAvg:null,C.wN?C.wAvg:null,"none",kg,"kg"),
+    `<tr class="grp"><th colspan="4">Kalori, besin ve su</th></tr>`,cmpRow("Ort. günlük kalori",hasPrev&&P.A.n?P.A.avg:null,A.n?A.avg:null,"none",i0,"kcal"),
+    cmpRow("Hedefte geçen gün",hasPrev?P.A.ok:null,A.ok,"high",i0,"gün"),cmpRow("Hedefi aşan gün",hasPrev?P.A.over:null,A.over,"low",i0,"gün"),cmpRow("Çok düşük kalan gün",hasPrev?P.A.under:null,A.under,"low",i0,"gün"),
+    cmpRow("Protein",hasPrev&&P.A.n?P.p:null,A.n?C.p:null,"none",i0,"g/gün"),cmpRow("Yağ",hasPrev&&P.A.n?P.f:null,A.n?C.f:null,"none",i0,"g/gün"),cmpRow("Karbonhidrat",hasPrev&&P.A.n?P.c:null,A.n?C.c:null,"none",i0,"g/gün"),
+    ...(A.waN||(hasPrev&&P.A.waN)?[cmpRow("Ort. günlük su",hasPrev&&P.A.waN?P.A.waAvg:null,A.waN?A.waAvg:null,"none",i0,"ml")]:[]),
+    cmpRow("Yiyecek kaydı olan gün",hasPrev?P.A.n:null,A.n,"none",i0,"gün"),
     ...(C.supp.length?[`<tr class="grp"><th colspan="4">Takviyeler (alınan gün)</th></tr>`,...C.supp.map((x,i)=>cmpRow(esc(x.sp.name),hasPrev?P.supp[i].taken:null,x.taken,"high",i0,"gün"))]:[])].join("");
   // aylık gidişat
   const months=[];keysBetween(fk<a?fk:a,b).forEach(k=>{const m=k.slice(0,7);let r=months[months.length-1];if(!r||r.m!==m)months.push(r={m,keys:[]});r.keys.push(k)});
   const mrows=months.slice(-12).map(r=>{const M=metrics(r.keys),inP=r.keys[r.keys.length-1]>=a&&r.keys[0]<=b;const [y,mo]=r.m.split("-");
-    return `<tr class="${inP?"cur":""}"><td>${MONTHS[+mo-1]} ${y}</td>${nm?"":`<td>${M.taken}</td><td class="${M.missed?"bad":""}">${M.missed}</td><td style="white-space:nowrap">${(()=>{const e=r.keys[r.keys.length-1],d=doseOn(e<b?e:b),ch=doseChange(doseOn(shiftKey(r.keys[0],-1)),d),ar=ch?{up:"▲ ",down:"▼ ",switch:"↔ "}[ch.kind]||"":"";return d?ar+esc(fmtDose(d)):"–"})()}</td>`}<td>${M.A.n?i0(M.A.avg):"–"}</td><td style="white-space:nowrap">${M.A.waN?`${fmtL(M.A.waAvg)} L · ${M.A.waN} gün`:"–"}</td><td>${M.wN?kg(M.wAvg):"–"}</td><td>${M.wN>1?fmtDiff(M.wDelta):"–"}</td><td>${M.A.harmCount||"–"}</td><td>${M.fl.alcohol.size||"–"}</td><td>${M.sym._avg!=null?nf(M.sym._avg,1):"–"}</td><td>${(()=>{const t=labsL().filter(l=>l.code==="TSH"&&l.date>=r.keys[0]&&l.date<=r.keys[r.keys.length-1]).sort((x,y)=>x.date<y.date?-1:1);return t.length?`<span class="${labStatus(t[t.length-1])[0]==="ok"?"":"bad"}">${numTR(t[t.length-1].v)}</span>`:"–"})()}</td><td>${M.A.n}/${M.tracked}</td></tr>`}).join("");
-  const css=`:root{--ink:#17231F;--muted:#5C6C66;--line:#D5DED9;--sunk:#EEF2EF;--accent:#23584E;--good:#247545;--warn:#A16207;--bad:#B91C1C;--prot:#2563EB}
-  @page{size:A4;margin:13mm 12mm}*{box-sizing:border-box}body{font-family:"Segoe UI",Roboto,"Noto Sans",Arial,sans-serif;color:var(--ink);font-size:9.6pt;line-height:1.4;margin:0;background:#fff}
-  h1{font-size:15pt;margin:0;color:var(--accent)}h2{font-size:10.5pt;margin:0 0 5px;color:var(--accent);text-transform:uppercase;letter-spacing:.06em;break-after:avoid;page-break-after:avoid}
-  .hdr{display:grid;grid-template-columns:1fr auto;gap:12px;border-bottom:2.5px solid var(--accent);padding-bottom:7px;margin-bottom:10px}
-  .meta{display:grid;grid-template-columns:auto auto;gap:1px 10px;font-size:8.8pt}.meta span{color:var(--muted)}
-  section{margin:0 0 12px;break-inside:avoid;page-break-inside:avoid}.flow{break-inside:auto;page-break-inside:auto}
-  table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}th,td{text-align:left;padding:3.5px 6px;border-bottom:1px solid var(--line);vertical-align:top}
-  thead th{font-size:8pt;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;border-bottom:1.5px solid var(--ink)}thead{display:table-header-group}tr{break-inside:avoid;page-break-inside:avoid}
-  .cmp{table-layout:fixed}.cmp th{font-weight:500;width:36%}.cmp td{width:21%;white-space:nowrap}.cmp td:last-child{width:22%}
-  .kv2 th{font-weight:500;width:26%;color:var(--muted)}.cmp tr.grp th{background:var(--sunk);font-weight:700;font-size:8.5pt;text-transform:uppercase;letter-spacing:.04em;color:var(--accent);padding-top:5px}
-  .better{color:var(--good);font-weight:700}.worse{color:var(--bad);font-weight:700}.bad{color:var(--bad);font-weight:700}
-  .trend{font-size:8.8pt}.trend tr.cur td{background:#E7F1EE;font-weight:600}.trend td{text-align:right}.lt td,.lt th{text-align:left!important;vertical-align:top}.trend td:first-child,.trend th:first-child{text-align:left}.trend th{text-align:right}
-  .two{display:grid;grid-template-columns:1fr 1fr;gap:12px}.cap{font-size:8pt;color:var(--muted);margin:2px 0 0}
-  .ev{list-style:none;margin:0;padding:0}.ev li{padding:3px 0 3px 14px;position:relative;border-bottom:1px solid var(--line)}
-  .ev li::before{content:"";position:absolute;left:0;top:8px;width:7px;height:7px;border-radius:50%;background:var(--muted)}.ev li.good::before{background:var(--good)}.ev li.warn::before{background:var(--warn)}
-  .note{border:1px solid var(--line);border-radius:4px;padding:6px 8px;white-space:pre-wrap}.foot{margin-top:10px;font-size:7.8pt;color:var(--muted);border-top:1px solid var(--line);padding-top:5px}
-  .dl td,.dl th{font-size:8.6pt;padding:2.5px 5px}.over{color:var(--bad)}.under{color:var(--warn)}.ok{color:var(--good)}`;
-  const daily=withDaily?`<section class="flow" style="break-before:page;page-break-before:always"><h2>Ek: günlük kayıtlar</h2><table class="dl"><thead><tr><th>Tarih</th><th>Kalori</th><th>Hedef</th>${nm?"":"<th>İlaç</th>"}<th>Su</th><th>Kilo</th><th>“Uzak dur” grubundan</th></tr></thead><tbody>
-    ${A.I.filter(i=>i.med!=="future").map(i=>`<tr><td>${parseKey(i.k).toLocaleDateString("tr-TR",{day:"2-digit",month:"2-digit",weekday:"short"})}</td><td class="${i.bal||""}">${i.has?r0(i.t.k):"–"}</td><td>${i.has?i.tar:"–"}</td>${nm?"":`<td class="${i.med==="missed"?"bad":""}">${i.medAt||(i.med==="missed"?"Alınmadı":"–")}</td>`}<td>${i.water?numTR(i.water,0)+" ml":"–"}</td><td>${i.w?kg(i.w):"–"}</td><td>${esc([...new Set(i.entries.filter(e=>stOf(e)==="no").map(e=>e.n))].join(", "))}</td></tr>`).join("")}</tbody></table></section>`:"";
-  const bmi=st.heightCm&&C.wN?C.wEnd/((st.heightCm/100)**2):null;
+    const tsh=labsL().filter(l=>l.code==="TSH"&&l.date>=r.keys[0]&&l.date<=r.keys[r.keys.length-1]).sort((x,y)=>x.date<y.date?-1:1),dd=doseOn(r.keys[r.keys.length-1]<b?r.keys[r.keys.length-1]:b);
+    return `<tr class="${inP?"cur":""}"><td>${MONTHS[+mo-1]} ${y}</td>${nm?"":`<td>${dd?esc(fmtDose(dd)):"–"}</td><td>${M.taken}</td><td class="${M.missed?"db":""}">${M.missed}</td>`}<td>${tsh.length?`<span class="${labStatus(tsh[tsh.length-1])[0]==="ok"?"":"db"}">${numTR(tsh[tsh.length-1].v)}</span>`:"–"}</td><td>${M.wN?kg(M.wAvg):"–"}</td><td>${M.wN>1?fmtDiff(M.wDelta):"–"}</td><td>${M.A.n?i0(M.A.avg):"–"}</td><td>${M.A.waN?fmtL(M.A.waAvg):"–"}</td><td>${M.A.harmCount||"–"}</td><td>${M.fl.alcohol.size||"–"}</td><td>${M.sym._avg!=null?nf(M.sym._avg,1):"–"}</td><td>${M.A.n}/${M.tracked}</td></tr>`}).join("");
+  const css=`@page{size:A4;margin:12mm 12mm 14mm;@bottom-left{content:"${esc((st.reportName?st.reportName+" · ":"")+"Tiroid takip raporu · "+rxSd(a)+" – "+rxSd(b))}";font-size:7.5pt;color:#5B6B65}@bottom-right{content:"Sayfa " counter(page) " / " counter(pages);font-size:7.5pt;color:#5B6B65}}
+  *{box-sizing:border-box}body{font-family:"Segoe UI",Roboto,"Noto Sans",Arial,sans-serif;color:${RX.ink};font-size:9.4pt;line-height:1.42;margin:0;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .hero{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;background:${RX.acc};color:#fff;border-radius:10px;padding:12px 14px}
+  .hero h1{margin:0;font-size:17pt;letter-spacing:-.01em}.hero .sub{opacity:.85;font-size:9pt}
+  .pt{background:rgba(255,255,255,.12);border-radius:8px;padding:7px 10px;font-size:8.6pt;display:grid;grid-template-columns:auto auto;gap:1px 10px}.pt span{opacity:.8}
+  .period{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:1px solid ${RX.line};border-radius:8px;margin:8px 0 10px;overflow:hidden}
+  .period div{padding:6px 9px;border-right:1px solid ${RX.line}}.period div:last-child{border-right:0}.period span{display:block;font-size:7.6pt;color:${RX.muted};text-transform:uppercase;letter-spacing:.05em}.period b{font-size:9.2pt}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:10px}
+  .kpi{border:1px solid ${RX.line};border-radius:8px;padding:7px 9px 8px;border-top:3px solid ${RX.line};break-inside:avoid}
+  .kpi.t-good{border-top-color:${RX.good}}.kpi.t-warn{border-top-color:${RX.warn}}.kpi.t-bad{border-top-color:${RX.bad}}
+  .kl{display:flex;gap:5px;align-items:center;font-size:7.8pt;text-transform:uppercase;letter-spacing:.05em;color:${RX.muted};font-weight:600}
+  .kv{font-size:15pt;font-weight:700;margin:2px 0 1px;letter-spacing:-.01em;font-variant-numeric:tabular-nums}.kv small{font-size:8.5pt;font-weight:500;color:${RX.muted}}
+  .ks{font-size:8pt;color:${RX.ink}}.dg{color:${RX.good};font-weight:700}.db{color:${RX.bad};font-weight:700}.dz{color:${RX.muted}}
+  h2{display:flex;align-items:center;gap:8px;font-size:12.5pt;margin:0 0 2px;color:${RX.acc};break-after:avoid;page-break-after:avoid}
+  h2 .no{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:6px;background:${RX.acc};color:#fff;font-size:10pt}
+  .lead{color:${RX.muted};font-size:8.6pt;margin:0 0 8px}
+  h3{font-size:9.8pt;margin:10px 0 4px;color:${RX.ink};display:flex;gap:6px;align-items:center;break-after:avoid;page-break-after:avoid}
+  .chap{break-before:page;page-break-before:always}.sec{margin-top:16px}
+  .trend td{white-space:nowrap}
+  .blk{break-inside:avoid;page-break-inside:avoid;margin-bottom:8px}
+  .ev{list-style:none;margin:0;padding:0;display:grid;gap:4px}.ev li{display:grid;grid-template-columns:18px 1fr;gap:6px;align-items:start;padding:4px 8px;font-size:9pt;border-radius:6px;background:${RX.sunk};break-inside:avoid}
+  .ev li.warn{background:#FDF3E3}.ev li.good{background:#EAF5EE}.ev .ic{margin-top:1px}
+  table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}th,td{text-align:left;padding:4px 6px;border-bottom:1px solid ${RX.line};vertical-align:top}
+  thead th{font-size:7.6pt;color:${RX.muted};text-transform:uppercase;letter-spacing:.05em;border-bottom:1.5px solid ${RX.ink};font-weight:600}thead{display:table-header-group}tr{break-inside:avoid;page-break-inside:avoid}
+  .cap{font-size:7.8pt;color:${RX.muted};margin:2px 0 0}
+  .vals{display:flex;flex-wrap:wrap;gap:4px}.lv{display:inline-flex;flex-direction:column;border:1px solid ${RX.line};border-radius:5px;padding:2px 6px;min-width:52px}.lv i{font-style:normal;font-size:7.3pt;color:${RX.muted}}
+  .lv.lb b{color:${RX.bad}}.lv.lp{background:${RX.accSoft};border-color:#BBD8CF}
+  .chip{display:inline-block;border-radius:99px;padding:1px 8px;font-size:8pt;font-weight:700}.cg{background:#E3F2E8;color:${RX.good}}.cb{background:#FBE4E3;color:${RX.bad}}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:6px 0}.stats div{background:${RX.sunk};border-radius:6px;padding:5px 8px}.stats span{display:block;font-size:7.6pt;color:${RX.muted}}.stats b{font-size:10.5pt;font-variant-numeric:tabular-nums}
+  .lg{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:7.8pt;color:${RX.muted};margin-top:4px}.lg i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+  .cmp{table-layout:fixed}.cmp th{font-weight:500;width:36%}.cmp td{width:21%;white-space:nowrap}.cmp td:last-child{width:22%}.cmp tr.grp th{background:${RX.sunk};font-weight:700;font-size:8pt;text-transform:uppercase;letter-spacing:.05em;color:${RX.acc}}
+  .better{color:${RX.good};font-weight:700}.worse{color:${RX.bad};font-weight:700}
+  .trend{font-size:8.5pt}.trend td{text-align:right}.trend td:first-child,.trend th:first-child{text-align:left}.trend th{text-align:right}tr.cur td{background:${RX.accSoft};font-weight:600}
+  .mbar{height:7px;background:${RX.sunk};border-radius:99px;overflow:hidden;width:110px}.mbar i{display:block;height:100%;border-radius:99px}
+  .note{border:1px solid ${RX.line};border-left:3px solid ${RX.acc};border-radius:6px;padding:7px 10px;white-space:pre-wrap}
+  .foot{margin-top:12px;font-size:7.6pt;color:${RX.muted};border-top:1px solid ${RX.line};padding-top:6px}
+  .dl td,.dl th{font-size:8.3pt;padding:2.5px 5px}.over{color:${RX.bad}}.under{color:${RX.warn}}.ok{color:${RX.good}}`;
+  const ch=(n,icon,title,lead,cls)=>`<h2 class="${cls||""}"><span class="no">${n}</span>${ico(icon,RX.acc,18)}${title}</h2><p class="lead">${lead}</p>`;
+  let N=0;const next=()=>++N;
+  const secThyro=(labRows||(!nm&&R.length)||thyroCharts)?`<div class="chap">${ch(next(),"flask","Tiroid tahlilleri"+(nm?"":" ve ilaç"),"Tahlil sonuçlarının seyri ve"+(nm?"":" ilaç dozu ile birlikte")+" zaman içindeki değişimi. Yeşil alan referans aralığı, gölgeli alan rapor dönemidir.")}
+    ${labRows?`<div class="blk"><table><thead><tr><th style="width:24%">Tahlil / referans</th><th>Son sonuçlar (eskiden yeniye)</th><th style="width:96px">Eğilim</th><th style="width:20%">Son durum</th></tr></thead><tbody>${labRows}</tbody></table><p class="cap">Kırmızı değerler referans dışı; yeşil çerçeveli kutular rapor dönemine ait sonuçlar.</p></div>`:`<p class="cap">Bu döneme kadar tahlil sonucu girilmemiş.</p>`}
+    ${thyroCharts?`<div class="blk">${thyroCharts}<p class="cap">Grafikler aynı zaman eksenini paylaşır; dozdaki değişikliklerin tahlil sonuçlarıyla ilişkisi dikey olarak okunabilir.</p></div>`:""}
+    ${nm?"":`<h3>${ico("pill",RX.acc,15)}İlaç kullanımı</h3>
+    ${doseRows?`<div class="blk"><table><thead><tr><th>İlaç ve doz</th><th>Tarih aralığı</th><th>Süre</th><th>Önceki doza göre</th></tr></thead><tbody>${doseRows}</tbody></table></div>`:""}
+    <div class="stats"><div><span>Alınan gün</span><b>${C.taken} / ${C.tracked}</b></div><div><span>İşaretlenmeyen gün</span><b class="${C.missed?"db":""}">${C.missed}</b></div><div><span>Ortalama alma saati</span><b>${C.tAvg!=null?mmToHM(C.tAvg):"–"}${C.tSd!=null?` <small>±${Math.round(C.tSd)} dk</small>`:""}</b></div><div><span>İlaç sonrası erken yiyecek</span><b class="${C.inter?"db":""}">${C.inter} gün</b></div></div>
+    <div class="two blk"><div>${rxAdherence(I)}<div class="lg"><span><i style="background:${RX.good}"></i>alındı</span><span><i style="background:${RX.bad}"></i>işaretlenmedi</span></div></div><div>${rxMedTimes(I,plan)||'<p class="cap">Saat grafiği için yeterli kayıt yok.</p>'}<div class="lg"><span><i style="background:${RX.acc}"></i>alma saati</span><span><i style="background:${RX.warn}"></i>plandan 1 saatten fazla sapma</span><span><b style="color:${RX.bad}">×</b> işaretlenmedi</span></div></div></div>
+    ${C.missed?`<p class="cap"><b class="db">İşaretlenmeyen günler:</b> ${C.missedDays.map(rxSd).join(", ")}</p>`:""}
+    ${C.inter?`<p class="cap">İlaç sonrası önerilen bekleme süresi dolmadan kaydedilenler: ${topN(C.interItems,6).map(esc).join(", ")} (kayıt saatine göre).</p>`:""}`}
+    ${suppRows?`<h3>${ico("cap",RX.acc,15)}Takviyeler</h3><div class="blk"><table><thead><tr><th>Takviye</th><th>Plan</th><th>İlaçla ara</th><th>Alınan</th><th>İlaca yakın alınan gün</th></tr></thead><tbody>${suppRows}</tbody></table></div>`:""}</div>`:"";
+  const secNut=`<div class="sec">${ch(next(),"plate","Kilo, beslenme ve su","Kilo seyri, günlük enerji alımı, makro besin dağılımı ve Haşimato açısından dikkat edilen besinlerin tüketimi.")}
+    ${C.wN?`<div class="blk">${rxWeight(I,st.goalW?+st.goalW:null)}<div class="stats"><div><span>Başlangıç → son</span><b>${kg(C.wStart)} → ${kg(C.wEnd)} kg</b></div><div><span>Değişim</span><b>${fmtDiff(C.wDelta)} kg</b></div><div><span>Haftalık hız</span><b>${C.rate!=null&&C.wN>=3?fmtDiff(C.rate)+" kg":"–"}</b></div><div><span>En düşük / en yüksek${bmi?" · VKİ":""}</span><b>${kg(C.wMin)} / ${kg(C.wMax)}${bmi?" · "+nf(bmi,1):""}</b></div></div></div>`:`<p class="cap">Bu dönemde kilo ölçümü yok.</p>`}
+    ${A.n?`<div class="blk">${rxKcal(I)}<div class="lg"><span><i style="background:${RX.good}"></i>hedefte</span><span><i style="background:${RX.bad}"></i>%5'ten fazla aşım</span><span><i style="background:${RX.warn}"></i>hedefin %80'inden az</span></div>
+     <div class="stats"><div><span>Ortalama / hedef</span><b>${i0(A.avg)} / ${i0(A.avgTar)} kcal</b></div><div><span>Hedefte · aşım · düşük</span><b>${A.ok} · ${A.over} · ${A.under} gün</b></div><div><span>Toplam fark</span><b>${A.sum>A.tar?"+":""}${i0(A.sum-A.tar)} kcal</b></div><div><span>Kayıtlı gün</span><b>${A.n} / ${C.tracked}</b></div></div></div>
+    <div class="two blk"><div><h3>Makro besin dağılımı (enerji %)</h3>${macroBars}<p class="cap">Günlük ortalama: protein ${i0(C.p)} g, yağ ${i0(C.f)} g, karbonhidrat ${i0(C.c)} g${C.wN?` · protein ${nf(C.p/C.wEnd,2)} g/kg`:""}.</p></div>
+     <div><h3>Kalorinin kaynağı</h3>${qualBars}<p class="cap">Yiyeceklerin Haşimato için genel önerilere göre sınıflandırılmasıdır.</p></div></div>`:`<p class="cap">Bu dönemde yiyecek kaydı yok.</p>`}
+    <div class="blk"><h3>${ico("alert",RX.acc,15)}Dikkat edilen besinler</h3><table><thead><tr><th>Grup</th><th>Bu dönem</th><th>Önceki dönem</th><th>Ayrıntı</th></tr></thead><tbody>${flags}</tbody></table></div>
+    ${A.waN?`<p class="cap">${ico("drop",RX.water,12)} Su: ${A.waN} gün kayıt, günlük ortalama ${fmtL(A.waAvg)} L${hasPrev&&P.A.waN?` (önceki dönem ${fmtL(P.A.waAvg)} L)`:""}.</p>`:""}</div>`;
+  const symHeat=rxSymHeat(keys);
+  const secSym=(symHeat||C.sym._notes.length)?`<div class="blk">${ch(next(),"face","Belirtiler","Hastanın her gün 0 (yok) ile 4 (şiddetli) arasında işaretlediği belirtiler.")}
+    ${symHeat}${symRows?`<table style="margin-top:8px"><thead><tr><th>Belirti</th><th>Bu dönem</th><th>Ort.</th><th>Önceki</th><th>Değişim</th></tr></thead><tbody>${symRows}</tbody></table>`:""}
+    ${C.sym._notes.length?`<p class="cap" style="margin-top:6px"><b>Notlar:</b> ${C.sym._notes.slice(-8).map(([k,n])=>`${rxSd(k)}: ${esc(n)}`).join(" · ")}</p>`:""}</div>`:"";
+  const daily=withDaily?`<div class="chap"><h2>Ek · Günlük kayıtlar</h2><table class="dl"><thead><tr><th>Tarih</th><th>Kalori</th><th>Hedef</th>${nm?"":"<th>İlaç</th>"}<th>Kilo</th><th>Su</th><th>Belirti ort.</th><th>“Uzak dur” grubundan</th></tr></thead><tbody>
+    ${I.map(i=>{const sy=(S.days[i.k]||{}).sym,sv=sy?SYMS.map(([id])=>sy[id]).filter(x=>x!=null):[];return `<tr><td>${parseKey(i.k).toLocaleDateString("tr-TR",{day:"2-digit",month:"2-digit",weekday:"short"})}</td><td class="${i.bal||""}">${i.has?r0(i.t.k):"–"}</td><td>${i.has?i.tar:"–"}</td>${nm?"":`<td class="${i.med==="missed"?"db":""}">${i.medAt||(i.med==="missed"?"–":"")}</td>`}<td>${i.w?kg(i.w):"–"}</td><td>${(S.days[i.k]||{}).water?numTR((S.days[i.k]||{}).water,0):"–"}</td><td>${sv.length?numTR(sv.reduce((x,y)=>x+y,0)/sv.length,1):"–"}</td><td>${esc([...new Set(i.entries.filter(e=>stOf(e)==="no").map(e=>e.n))].join(", "))}</td></tr>`}).join("")}</tbody></table></div>`:"";
   return `<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Tiroid takip raporu ${a} – ${b}</title><style>${css}</style></head><body>
-  <div class="hdr"><div><h1>Tiroid takip raporu</h1><div style="margin-top:2px">${st.reportName?`<b>${esc(st.reportName)}</b> · `:""}Haşimato tiroiditi · beslenme, ${nm?"":"ilaç ve "}kilo kayıtları</div></div>
-   <div class="meta"><span>Rapor dönemi</span><b>${ld(a)} – ${ld(b)} (${len} gün)</b><span>Karşılaştırma</span><b>${hasPrev?`${ld(pa)} – ${ld(pb)}`:"Önceki kayıt yok"}</b><span>Takip başlangıcı</span><b>${ld(fk)}</b>
-   <span>İlaç / plan</span><b>${nm?"İlaç kullanmıyor":`${esc(C.doseEnd?fmtDoseFull(C.doseEnd):medLabel())}${st.medTime?` · ${st.medTime}`:""}`}</b><span>Kalori hedefi</span><b>${st.kcal} kcal/gün</b>${st.goalW?`<span>Hedef kilo</span><b>${kg(+st.goalW)} kg</b>`:""}${st.heightCm?`<span>Boy${bmi?" / VKİ":""}</span><b>${st.heightCm} cm${bmi?" / "+nf(bmi,1):""}</b>`:""}</div></div>
-  <section class="flow"><h2>Dönem karşılaştırması</h2><table class="cmp"><thead><tr><th>Ölçüt</th><th>Önceki dönem</th><th>Bu dönem</th><th>Değişim</th></tr></thead><tbody>${rows}</tbody></table>
-   <p class="cap">Önceki dönem, rapor dönemiyle aynı uzunlukta hemen önceki aralıktır. Yeşil iyileşme, kırmızı kötüleşme yönündeki değişimi gösterir. Uygulamada “alındı” işaretlenmeyen günler atlanmış sayılır.</p></section>
-  <section><h2>Bu dönemin özeti</h2><ul class="ev">${E.map(x=>`<li class="${x.l}">${esc(x.t)}</li>`).join("")||"<li>Yeterli kayıt yok.</li>"}</ul></section>
-  ${doseSection(a,b)}
-  ${labsSection(a,b)}
-  ${showHist?`<section><h2>Takip başından bugüne</h2><div class="two"><div><b style="font-size:9pt">Haftalık ortalama kilo</b>${histChart(Hs,a,b,"w")||'<p class="cap">Yeterli kilo ölçümü yok.</p>'}</div><div><b style="font-size:9pt">Haftalık ortalama kalori</b>${histChart(Hs,a,b,"k")}<p class="cap">Yeşil hedefte, kırmızı aşım, sarı çok düşük; kesikli çizgi hedef.</p></div></div></section>`:""}
-  <section><h2>Aylık gidişat</h2><table class="trend"><thead><tr><th>Ay</th>${nm?"":"<th>İlaç alındı</th><th>Atlandı</th><th>Doz</th>"}<th>Ort. kcal</th><th>Su</th><th>Ort. kilo</th><th>Kilo değ.</th><th>“Uzak dur”</th><th>Alkol gün</th><th>Belirti</th><th>TSH</th><th>Kayıt</th></tr></thead><tbody>${mrows}</tbody></table>
-   <p class="cap">Vurgulu satırlar rapor dönemine denk gelen aylardır. “Kayıt”: yiyecek kaydı olan gün / takip edilen gün. “Su”: günlük ortalama / su kaydı olan gün. ${nm?"":"“Doz”: ay sonundaki doz; ▲ artış, ▼ azalış, ↔ ilaç değişikliği."}</p></section>
-  <section><h2>Dönem ayrıntıları</h2><table class="kv2"><tbody>
-   ${C.supp.length?`<tr><th>Takviyeler</th><td>${C.supp.map(x=>`${esc(x.sp.name)} (plan ${x.sp.time}, ${x.taken}/${C.tracked} gün)`).join(", ")}</td></tr>`:""}
-   ${C.sym._notes.length?`<tr><th>Belirti notları</th><td>${C.sym._notes.slice(-5).map(([k,n])=>`${fmtShort(k)}: ${esc(n)}`).join("; ")}</td></tr>`:""}
-   ${nm?"":`<tr><th>Atlanan ilaç günleri</th><td>${C.missed?C.missedDays.map(sd).join(", "):"Yok"}</td></tr>`}
-   ${C.wN?`<tr><th>Kilo aralığı</th><td>en düşük ${kg(C.wMin)} kg · en yüksek ${kg(C.wMax)} kg · ${C.wN} ölçüm</td></tr>`:""}
-   <tr><th>Kalori kaynağı</th><td>uygun %${A.pct("ok")} · dikkatli %${A.pct("care")} · uzak dur %${A.pct("no")}</td></tr>
-   <tr><th>“Uzak dur” grubundan</th><td>${A.harm.length?A.harm.slice(0,6).map(f=>`${esc(f.n)} (${f.c})`).join(", "):"Yok"}</td></tr>
-   <tr><th>Glüten içerenler</th><td>${C.fl.gluten.size?`${C.fl.gluten.size} gün · ${topN(C.flNames.gluten,4).map(esc).join(", ")}`:"Yok"}</td></tr>
-   <tr><th>En çok kalori</th><td>${A.top.slice(0,5).map(f=>`${esc(f.n)} (${r0(f.k)} kcal)`).join(", ")||"–"}</td></tr>
-  </tbody></table></section>
-  ${notes?`<section><h2>Hastanın notu</h2><div class="note">${esc(notes)}</div></section>`:""}
-  <div class="foot">FlutterThyro ile ${new Date().toLocaleDateString("tr-TR")} tarihinde oluşturuldu. Veriler kişinin kendi kayıtlarıdır; kalori ve besin değerleri yaklaşıktır. “Bu dönemin özeti” kayıtlardan otomatik hazırlanmıştır, tıbbi yorum değildir.</div>
+  <div class="hero">${LOGO}<div><h1>Tiroid Takip Raporu</h1><div class="sub">Haşimato tiroiditi · hastanın günlük kayıtlarından hazırlanmıştır</div></div>
+   <div class="pt">${st.reportName?`<span>Hasta</span><b>${esc(st.reportName)}</b>`:""}${nm?`<span>İlaç</span><b>Kullanmıyor</b>`:`<span>İlaç</span><b>${esc(C.doseEnd?fmtDoseFull(C.doseEnd):medLabel())}</b>${st.medTime?`<span>Alma saati</span><b>${st.medTime}</b>`:""}`}${st.heightCm?`<span>Boy${bmi?" · VKİ":""}</span><b>${st.heightCm} cm${bmi?" · "+nf(bmi,1):""}</b>`:""}${st.goalW?`<span>Hedef kilo</span><b>${kg(+st.goalW)} kg</b>`:""}<span>Kalori hedefi</span><b>${st.kcal} kcal</b></div></div>
+  <div class="period"><div><span>Rapor dönemi</span><b>${rxLd(a)} – ${rxLd(b)}</b></div><div><span>Süre</span><b>${len} gün</b></div><div><span>Karşılaştırılan dönem</span><b>${hasPrev?`${rxSd(pa)} – ${rxLd(pb)}`:"önceki kayıt yok"}</b></div><div><span>Takip başlangıcı · kayıt doluluğu</span><b>${rxLd(fk)} · %${recPct}</b></div></div>
+  <div class="kpis">${cards}</div>
+  <div class="blk"><h3>${ico("cal",RX.acc,15)}Günlük takip haritası</h3>${rxStrip(I,a,b,nm)}</div>
+  <div class="blk"><h3>${ico("info",RX.acc,15)}Öne çıkanlar</h3><ul class="ev">${E.slice(0,7).map(x=>`<li class="${x.l}">${ico(x.l==="warn"?"alert":x.l==="good"?"ok":"info",x.l==="warn"?RX.warn:x.l==="good"?RX.good:RX.muted,15)}<span>${esc(x.t)}</span></li>`).join("")||"<li>Yeterli kayıt yok.</li>"}</ul><p class="cap">Bu maddeler kayıtlardan otomatik çıkarılmıştır; tıbbi yorum değildir. Uygulamada “alındı” işaretlenmeyen günler ilaç alınmamış sayılır.${E.length>7?` Diğer ${E.length-7} gözlem karşılaştırma bölümündedir.`:""}</p></div>
+  ${notes?`<div class="blk"><h3>Hastanın notu</h3><div class="note">${esc(notes)}</div></div>`:""}
+  ${secThyro}
+  ${secNut}
+  ${secSym}
+  <div class="${secSym?"":"chap"}">${ch(next(),"chart","Dönem karşılaştırması","Rapor dönemi ile hemen önceki aynı uzunluktaki dönemin karşılaştırması. Yeşil iyileşme, kırmızı kötüleşme yönündeki değişimdir.",secSym?"":"")}
+   <table class="cmp"><thead><tr><th>Ölçüt</th><th>Önceki dönem</th><th>Bu dönem</th><th>Değişim</th></tr></thead><tbody>${cmpRows}</tbody></table>
+   ${E.length>7?`<h3>${ico("info",RX.acc,15)}Diğer gözlemler</h3><ul class="ev">${E.slice(7).map(x=>`<li class="${x.l}">${ico(x.l==="warn"?"alert":x.l==="good"?"ok":"info",x.l==="warn"?RX.warn:x.l==="good"?RX.good:RX.muted,15)}<span>${esc(x.t)}</span></li>`).join("")}</ul>`:""}</div>
+  <div class="blk" style="margin-top:12px">${ch(next(),"cal","Takip başından bugüne · aylık gidişat","Her ayın özeti. Vurgulu satırlar rapor dönemine denk gelen aylardır.")}
+   <table class="trend"><thead><tr><th>Ay</th>${nm?"":"<th>Doz</th><th>İlaç alındı</th><th>İşaretsiz</th>"}<th>TSH</th><th>Ort. kilo</th><th>Kilo değ.</th><th>Ort. kcal</th><th>Su (L)</th><th>“Uzak dur”</th><th>Alkol gün</th><th>Belirti</th><th>Kayıt</th></tr></thead><tbody>${mrows}</tbody></table></div>
+  <div class="foot">FlutterThyro ile ${new Date().toLocaleDateString("tr-TR",{day:"numeric",month:"long",year:"numeric"})} tarihinde oluşturuldu. Tüm veriler hastanın kendi girdiği kayıtlardır; kalori ve besin değerleri yaklaşıktır, ilaç ile yiyecek arasındaki süreler kayıt saatine göre hesaplanmıştır. Yiyecek sınıflandırmaları genel Haşimato beslenme önerilerine dayanır. Bu rapor tıbbi tanı veya tedavi önerisi içermez; değerlendirme hekime aittir.</div>
   ${daily}</body></html>`;
 }
 let docRange=null;
