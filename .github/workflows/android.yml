@@ -23,8 +23,22 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.10.2"
+      - name: İmza anahtarını hazırla
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::error::KEYSTORE_BASE64 gizli değişkeni yok. Depo ayarlarında Secrets and variables > Actions altına ekle."
+            exit 1
+          fi
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.keystore"
       - name: APK derle
         working-directory: android
+        env:
+          SIGNING_KEYSTORE: ${{ runner.temp }}/release.keystore
+          SIGNING_STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          SIGNING_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: gradle --no-daemon assembleRelease
       - name: APK'yı adlandır
         run: |
@@ -42,3 +56,5 @@ jobs:
           body: |
             Telefona kurmak için aşağıdaki FlutterThyro.apk dosyasını indir (TiroidDefterim.apk aynı dosyadır, eski bağlantılar için duruyor).
             Uygulama ekranları ve yiyecek listesi buradan otomatik güncellenir; yeniden kurman gerekmez.
+
+            Önemli (bir kereye mahsus): Uygulamanın imza anahtarı güvenlik nedeniyle değişti. Eski sürümün üzerine kurulmazsa önce Ayarlar > Yedek > "Şimdi yedekle" ile yedek al, eski uygulamayı kaldır, bu APK'yı kur ve Ayarlar > Yedek > "Dosyadan geri yükle" ile yedeği geri yükle.
